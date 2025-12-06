@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from ...core.base_adapter import BaseAdapter
 from ...core.schema import (
@@ -44,16 +44,13 @@ class OpenAIAdapter(BaseAdapter):
             message = self.to_unified_message(msg_data)
             # Extract system message content for cross-provider compatibility
             if message.role.value == "system" and system_instruction is None:
-                # Extract system content as system_instruction
-                if isinstance(message.content, str):
-                    system_instruction = message.content
-                elif isinstance(message.content, list) and len(message.content) > 0:
-                    # If content is a list, extract text from first block
-                    first_block = message.content[0]
-                    if hasattr(first_block, 'text'):
-                        system_instruction = first_block.text
-                # IMPORTANT: Keep system message in messages array to preserve metadata and structure
-                # This ensures idempotency for OpenAI format
+                extracted_instruction = self._extract_system_instruction_from_message(
+                    message
+                )
+                if extracted_instruction:
+                    system_instruction = extracted_instruction
+            # IMPORTANT: Keep system message in messages array to preserve metadata and structure
+            # This ensures idempotency for OpenAI format
             messages.append(message)
 
         tools = None
@@ -200,6 +197,9 @@ class OpenAIAdapter(BaseAdapter):
             "model": unified_request.model,
             "messages": messages,
         }
+
+        if unified_request.system_instruction and not has_system_message:
+            result["system_instruction"] = unified_request.system_instruction
 
         if tools:
             result["tools"] = tools
@@ -451,6 +451,25 @@ class OpenAIAdapter(BaseAdapter):
             tool_calls=tool_calls,
             identifier=message_data.get("id"),
         )
+
+    def _extract_system_instruction_from_message(self, message: Message) -> Optional[str]:
+        """Helper to pull the human-readable text out of system messages"""
+        content = message.content
+        if isinstance(content, str) and content:
+            return content
+        if isinstance(content, list):
+            text_parts = []
+            for block in content:
+                text_value = None
+                if isinstance(block, ContentBlock):
+                    text_value = block.text
+                elif isinstance(block, dict):
+                    text_value = block.get("text")
+                if text_value:
+                    text_parts.append(text_value)
+            if text_parts:
+                return "".join(text_parts)
+        return None
 
     def _response_message_to_dict(self, response_message: ResponseMessage) -> Dict[str, Any]:
         """Convert ResponseMessage Pydantic model to dict"""
