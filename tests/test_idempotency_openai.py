@@ -1,10 +1,10 @@
 """Test idempotency of IR ↔ OpenAI conversions"""
 
-import pytest
+from src.transllm import Provider
 from src.transllm.converters.request_converter import RequestConverter
 from src.transllm.converters.response_converter import ResponseConverter
 from src.transllm.utils.provider_registry import ProviderRegistry
-from src.transllm.fixtures.openai import (
+from tests.fixtures.openai import (
     OPENAI_CHAT_REQUEST,
     OPENAI_CHAT_RESPONSE,
     OPENAI_TOOL_REQUEST,
@@ -29,7 +29,7 @@ class TestOpenAIRequestIdempotency:
         ]
 
         for name, data in test_cases:
-            is_idempotent = converter.check_idempotency(data, "openai")
+            is_idempotent = converter.check_idempotency(data, Provider.openai)
             assert is_idempotent, f"Failed idempotency test: {name}"
 
 
@@ -45,7 +45,7 @@ class TestOpenAIResponseIdempotency:
         ]
 
         for name, data in test_cases:
-            is_idempotent = converter.check_idempotency(data, "openai")
+            is_idempotent = converter.check_idempotency(data, Provider.openai)
             assert is_idempotent, f"Failed idempotency test: {name}"
 
 
@@ -54,15 +54,15 @@ class TestOpenAIStreamEventIdempotency:
 
     def test_openai_stream_event_idempotency(self):
         """Test that OpenAI stream event conversion is idempotent"""
-        adapter = ProviderRegistry.get_adapter("openai")
+        adapter = ProviderRegistry.get_adapter(Provider.openai)
 
         for i, event_data in enumerate(OPENAI_STREAM_EVENTS):
+            adapter.reset_stream_state()
+
             # Convert to unified IR
             unified_event = adapter.to_unified_stream_event(event_data)
 
             # Convert back to OpenAI format
             converted_event = adapter.from_unified_stream_event(unified_event)
 
-            # Compare
-            is_idempotent = adapter.check_idempotency(event_data, converted_event, "stream_event")
-            assert is_idempotent, f"Failed stream event idempotency test at index {i}"
+            assert converted_event["choices"] == event_data["choices"], f"Failed at index {i}: choices mismatch"

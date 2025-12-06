@@ -6,7 +6,7 @@ Anthropic SSE format and unified IR StreamEvent format.
 
 import pytest
 from src.transllm.adapters.anthropic import AnthropicAdapter
-from src.transllm.fixtures.anthropic import (
+from tests.fixtures.anthropic import (
     ANTHROPIC_STREAMING_EVENTS,
     ANTHROPIC_STREAMING_TOOL_EVENTS,
     ANTHROPIC_STREAMING_THINKING_EVENTS,
@@ -24,14 +24,10 @@ class TestAnthropicStreamingConversion:
         events = ANTHROPIC_STREAMING_EVENTS
 
         unified_events = []
-        sequence_id = 0
-        timestamp = 0.0
 
         for event in events:
-            unified = self.adapter.to_unified_stream_event(event, sequence_id, timestamp)
+            unified = self.adapter.to_unified_stream_event(event)
             unified_events.append(unified)
-            sequence_id += 1
-            timestamp += 0.01
 
         # Should have events for message_start, content_block_start, deltas, stops, message_stop
         assert len(unified_events) > 0
@@ -55,11 +51,12 @@ class TestAnthropicStreamingConversion:
 
     def test_text_streaming_events_round_trip(self):
         """Test that text streaming events round-trip correctly"""
+        self.adapter.reset_stream_state()
         events = ANTHROPIC_STREAMING_EVENTS
 
-        for i, event in enumerate(events):
+        for event in events:
             # Convert to unified
-            unified = self.adapter.to_unified_stream_event(event, i, 0.01 * i)
+            unified = self.adapter.to_unified_stream_event(event)
 
             # Convert back to Anthropic
             result = self.adapter.from_unified_stream_event(unified)
@@ -78,11 +75,12 @@ class TestAnthropicStreamingConversion:
 
     def test_tool_streaming_events_conversion(self):
         """Test that tool call streaming events are correctly converted"""
+        self.adapter.reset_stream_state()
         events = ANTHROPIC_STREAMING_TOOL_EVENTS
 
         unified_events = []
-        for i, event in enumerate(events):
-            unified = self.adapter.to_unified_stream_event(event, i, 0.01 * i)
+        for event in events:
+            unified = self.adapter.to_unified_stream_event(event)
             unified_events.append(unified)
 
         # Should have tool_call_delta events
@@ -96,10 +94,11 @@ class TestAnthropicStreamingConversion:
 
     def test_tool_streaming_events_round_trip(self):
         """Test that tool streaming events round-trip correctly"""
+        self.adapter.reset_stream_state()
         events = ANTHROPIC_STREAMING_TOOL_EVENTS
 
-        for i, event in enumerate(events):
-            unified = self.adapter.to_unified_stream_event(event, i, 0.01 * i)
+        for event in events:
+            unified = self.adapter.to_unified_stream_event(event)
             result = self.adapter.from_unified_stream_event(unified)
 
             # Event types should be preserved or mapped correctly
@@ -115,38 +114,68 @@ class TestAnthropicStreamingConversion:
 
     def test_thinking_streaming_events_conversion(self):
         """Test that thinking block streaming events are correctly converted"""
+        self.adapter.reset_stream_state()
         events = ANTHROPIC_STREAMING_THINKING_EVENTS
 
         unified_events = []
-        for i, event in enumerate(events):
-            unified = self.adapter.to_unified_stream_event(event, i, 0.01 * i)
+        for event in events:
+            unified = self.adapter.to_unified_stream_event(event)
             unified_events.append(unified)
 
         # Should have multiple content blocks (thinking and text)
         metadata_updates = [e for e in unified_events if e.type.value == "metadata_update"]
         assert len(metadata_updates) >= 2  # At least content_block_start for thinking and text
 
-    def test_stream_event_sequence_ids(self):
-        """Test that sequence_id is properly maintained in stream events"""
+    def test_stream_event_sequence_ids_auto_increment(self):
+        """Test that sequence_id is automatically incremented"""
+        self.adapter.reset_stream_state()
         event = ANTHROPIC_STREAMING_EVENTS[2]  # A content_block_delta event
 
-        for seq_id in [0, 1, 5, 10]:
-            unified = self.adapter.to_unified_stream_event(event, seq_id, 1.0)
-            assert unified.sequence_id == seq_id
+        # Process events and verify auto-increment
+        unified1 = self.adapter.to_unified_stream_event(event)
+        unified2 = self.adapter.to_unified_stream_event(event)
+        unified3 = self.adapter.to_unified_stream_event(event)
 
-    def test_stream_event_timestamps(self):
-        """Test that timestamps are properly maintained in stream events"""
+        assert unified1.sequence_id == 0
+        assert unified2.sequence_id == 1
+        assert unified3.sequence_id == 2
+
+    def test_stream_event_timestamps_auto_generate(self):
+        """Test that timestamps are automatically generated"""
+        self.adapter.reset_stream_state()
         event = ANTHROPIC_STREAMING_EVENTS[2]
 
-        for timestamp in [0.0, 1.5, 10.123]:
-            unified = self.adapter.to_unified_stream_event(event, 0, timestamp)
-            assert unified.timestamp == timestamp
+        # Process events and verify timestamps increase
+        unified1 = self.adapter.to_unified_stream_event(event)
+        unified2 = self.adapter.to_unified_stream_event(event)
+        unified3 = self.adapter.to_unified_stream_event(event)
+
+        # Timestamps should be non-negative and increasing
+        assert unified1.timestamp >= 0.0
+        assert unified2.timestamp >= unified1.timestamp
+        assert unified3.timestamp >= unified2.timestamp
+
+    def test_stream_state_reset(self):
+        """Test that reset_stream_state() resets sequence_id and timestamp"""
+        self.adapter.reset_stream_state()
+        event = ANTHROPIC_STREAMING_EVENTS[2]
+
+        # Process some events
+        unified1 = self.adapter.to_unified_stream_event(event)
+        unified2 = self.adapter.to_unified_stream_event(event)
+
+        # Reset and verify state is reset
+        self.adapter.reset_stream_state()
+        unified3 = self.adapter.to_unified_stream_event(event)
+
+        assert unified3.sequence_id == 0  # Should restart from 0
 
     def test_stream_event_content_index(self):
         """Test that content_index is properly extracted and preserved"""
+        self.adapter.reset_stream_state()
         # Event with index 0
         unified_0 = self.adapter.to_unified_stream_event(
-            ANTHROPIC_STREAMING_EVENTS[2], 0, 0.0
+            ANTHROPIC_STREAMING_EVENTS[2]
         )
         assert unified_0.content_index == 0
 
@@ -156,24 +185,26 @@ class TestAnthropicStreamingConversion:
             "index": 1,
             "delta": {"type": "text_delta", "text": "test"},
         }
-        unified_1 = self.adapter.to_unified_stream_event(tool_event_with_index, 0, 0.0)
+        unified_1 = self.adapter.to_unified_stream_event(tool_event_with_index)
         assert unified_1.content_index == 1
 
     def test_message_delta_event_handling(self):
         """Test that message_delta events are handled gracefully"""
+        self.adapter.reset_stream_state()
         event = {
             "type": "message_delta",
             "delta": {"stop_reason": "end_turn"},
             "usage": {"output_tokens": 50},
         }
 
-        unified = self.adapter.to_unified_stream_event(event, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(event)
         # Should convert to metadata_update or similar
         assert unified is not None
         assert unified.type.value in ["metadata_update", "content_finish"]
 
     def test_empty_delta_handling(self):
         """Test handling of empty delta fields"""
+        self.adapter.reset_stream_state()
         event = {
             "type": "content_block_delta",
             "index": 0,
@@ -183,12 +214,13 @@ class TestAnthropicStreamingConversion:
             },
         }
 
-        unified = self.adapter.to_unified_stream_event(event, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(event)
         assert unified.type.value == "content_delta"
         assert unified.content_delta == ""
 
     def test_event_round_trip_preserves_structure(self):
         """Test that event round-trip preserves overall structure"""
+        self.adapter.reset_stream_state()
         # Test a simple text delta event
         original_event = {
             "type": "content_block_delta",
@@ -199,7 +231,7 @@ class TestAnthropicStreamingConversion:
             },
         }
 
-        unified = self.adapter.to_unified_stream_event(original_event, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(original_event)
         result = self.adapter.from_unified_stream_event(unified)
 
         # Key structure should be preserved
@@ -216,30 +248,33 @@ class TestAnthropicStreamingEdgeCases:
 
     def test_malformed_event_graceful_fallback(self):
         """Test that malformed events fall back gracefully"""
+        self.adapter.reset_stream_state()
         malformed = {
             "type": "unknown_event_type",
             "data": "some_data",
         }
 
-        unified = self.adapter.to_unified_stream_event(malformed, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(malformed)
         # Should not raise, should return some metadata_update event
         assert unified is not None
         assert unified.type.value == "metadata_update"
 
     def test_missing_fields_handling(self):
         """Test handling of events with missing optional fields"""
+        self.adapter.reset_stream_state()
         minimal_event = {
             "type": "content_block_delta",
             # Missing index and delta - will use defaults
         }
 
-        unified = self.adapter.to_unified_stream_event(minimal_event, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(minimal_event)
         # Should handle gracefully - will be treated as unknown event type
         # since delta is missing
         assert unified is not None
 
     def test_event_with_metadata_preservation(self):
         """Test that event metadata is preserved during conversion"""
+        self.adapter.reset_stream_state()
         event = {
             "type": "content_block_delta",
             "index": 0,
@@ -252,7 +287,7 @@ class TestAnthropicStreamingEdgeCases:
             },
         }
 
-        unified = self.adapter.to_unified_stream_event(event, 0, 0.0)
+        unified = self.adapter.to_unified_stream_event(event)
         assert unified.metadata is not None
         assert unified.metadata.get("custom_field") == "custom_value"
 

@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Union
 from .schema_converter import convert_json_schema_to_gemini
 from .utils import (
     convert_image_url_to_gemini,
-    map_detail_to_media_resolution,
     merge_duplicate_messages,
     validate_gemini_request,
 )
@@ -17,8 +16,8 @@ from .utils import (
 class GeminiRequestTransformer:
     """Transform requests between OpenAI and Gemini formats"""
 
-    def __init__(self, is_vertex: bool = False) -> None:
-        self.is_vertex = is_vertex
+    def __init__(self) -> None:
+        pass
 
     def transform_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Transform OpenAI request to Gemini format
@@ -168,8 +167,7 @@ class GeminiRequestTransformer:
                         detail = image_url.get("detail") if isinstance(image_url, dict) else None
                         gemini_part = convert_image_url_to_gemini(
                             url,
-                            detail=detail,
-                            is_vertex=self.is_vertex
+                            detail=detail
                         )
                         parts.append(gemini_part)
 
@@ -393,24 +391,20 @@ class GeminiRequestTransformer:
         effort_lower = reasoning_effort.lower()
 
         if effort_lower == "low":
-            # Gemini 2.x uses thinkingBudget + includeThoughts
-            # Gemini 3.x uses thinkingLevel + includeThoughts
+            # Google AI Studio uses thinkingBudget + includeThoughts
             return {
-                "thinkingBudget": 8000 if not self.is_vertex else None,
-                "includeThoughts": True,
-                "thinkingLevel": "low" if self.is_vertex else None
+                "thinkingBudget": 8000,
+                "includeThoughts": True
             }
         elif effort_lower == "medium":
             return {
-                "thinkingBudget": 16000 if not self.is_vertex else None,
-                "includeThoughts": True,
-                "thinkingLevel": "medium" if self.is_vertex else None
+                "thinkingBudget": 16000,
+                "includeThoughts": True
             }
         elif effort_lower == "high":
             return {
-                "thinkingBudget": 32000 if not self.is_vertex else None,
-                "includeThoughts": True,
-                "thinkingLevel": "high" if self.is_vertex else None
+                "thinkingBudget": 32000,
+                "includeThoughts": True
             }
 
         return None

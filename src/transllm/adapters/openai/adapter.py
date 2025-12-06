@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from pydantic import BaseModel
-
-from ..core.base_adapter import BaseAdapter
-from ..ir.schema import (
+from ...core.base_adapter import BaseAdapter
+from ...core.schema import (
     CoreRequest,
     CoreResponse,
     StreamEvent,
@@ -20,8 +18,8 @@ from ..ir.schema import (
     ToolCall,
     ToolDefinition,
     GenerationParameters,
+    Provider,
 )
-from ..utils.capability_matrix import ProviderCapabilityMatrix
 
 
 class OpenAIAdapter(BaseAdapter):
@@ -32,18 +30,30 @@ class OpenAIAdapter(BaseAdapter):
     the brand-neutral IR.
     """
 
-    def __init__(self, provider_name: str = "openai") -> None:
+    def __init__(self, provider_name: Provider = Provider.openai) -> None:
         super().__init__(provider_name)
 
     def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
         """Convert OpenAI chat completion request to unified IR"""
-        # Extract system instruction if present separately (not from messages array)
+        # Extract system instruction - either from dedicated field or from messages array
         system_instruction = data.get("system_instruction")
         messages = []
 
-        # Convert all messages from messages array (including system messages)
+        # Convert all messages from messages array
         for msg_data in data.get("messages", []):
             message = self.to_unified_message(msg_data)
+            # Extract system message content for cross-provider compatibility
+            if message.role.value == "system" and system_instruction is None:
+                # Extract system content as system_instruction
+                if isinstance(message.content, str):
+                    system_instruction = message.content
+                elif isinstance(message.content, list) and len(message.content) > 0:
+                    # If content is a list, extract text from first block
+                    first_block = message.content[0]
+                    if hasattr(first_block, 'text'):
+                        system_instruction = first_block.text
+                # IMPORTANT: Keep system message in messages array to preserve metadata and structure
+                # This ensures idempotency for OpenAI format
             messages.append(message)
 
         tools = None
@@ -120,14 +130,20 @@ class OpenAIAdapter(BaseAdapter):
         """Convert unified IR request to OpenAI format"""
         messages = []
 
-        # Add system instruction as a system message if present
-        if unified_request.system_instruction:
+        # Check if there's already a system message in the messages array
+        has_system_message = any(
+            msg.role.value == "system" if hasattr(msg.role, 'value') else msg.role == "system"
+            for msg in unified_request.messages
+        )
+
+        # Add system instruction as a system message only if not already present
+        if unified_request.system_instruction and not has_system_message:
             messages.append({
                 "role": "system",
                 "content": unified_request.system_instruction,
             })
 
-        # Convert other messages
+        # Convert all messages (including system messages if present)
         messages.extend([self.from_unified_message(msg) for msg in unified_request.messages])
 
         tools = None
@@ -226,7 +242,7 @@ class OpenAIAdapter(BaseAdapter):
         if "grounding_attributions" in data and data["grounding_attributions"]:
             grounding_attributions = []
             for attr in data["grounding_attributions"]:
-                from ..ir.schema import GroundingAttribution
+                from ...core.schema import GroundingAttribution
                 grounding_attributions.append(
                     GroundingAttribution(
                         content_index=attr.get("content_index"),
@@ -372,7 +388,7 @@ class OpenAIAdapter(BaseAdapter):
                             )
                         )
                     elif content_type == "image_url":
-                        from ..ir.schema import ImageUrl
+                        from ...core.schema import ImageUrl
                         content_blocks.append(
                             ContentBlock(
                                 type="image_url",
@@ -383,7 +399,7 @@ class OpenAIAdapter(BaseAdapter):
                             )
                         )
                     elif content_type == "tool_result":
-                        from ..ir.schema import ToolResult
+                        from ...core.schema import ToolResult
                         content_blocks.append(
                             ContentBlock(
                                 type="tool_result",
@@ -394,7 +410,7 @@ class OpenAIAdapter(BaseAdapter):
                             )
                         )
                     elif content_type == "reasoning":
-                        from ..ir.schema import Reasoning
+                        from ...core.schema import Reasoning
                         content_blocks.append(
                             ContentBlock(
                                 type="reasoning",
@@ -570,7 +586,7 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def to_unified_stream_event(self, data: Dict[str, Any]) -> StreamEvent:
+    def _to_unified_stream_event_impl(self, data: Dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
         """Convert OpenAI stream event to unified IR"""
         # OpenAI uses delta chunks in choices
         choice = data.get("choices", [{}])[0]
@@ -603,8 +619,8 @@ class OpenAIAdapter(BaseAdapter):
 
         return StreamEvent(
             type=event_type,
-            sequence_id=data.get("sequence_id", 0),
-            timestamp=data.get("timestamp", 0.0),
+            sequence_id=sequence_id,
+            timestamp=timestamp,
             content_delta=content_delta,
             tool_call_delta=tool_call_delta,
             finish_reason=finish_reason,

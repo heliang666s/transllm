@@ -17,7 +17,7 @@ High-priority test scenarios (8):
 import pytest
 from src.transllm.adapters.openai import OpenAIAdapter
 from src.transllm.adapters.anthropic import AnthropicAdapter
-from src.transllm.fixtures.openai import (
+from tests.fixtures.openai import (
     OPENAI_CHAT_REQUEST,
     OPENAI_CHAT_RESPONSE,
     OPENAI_TOOL_REQUEST,
@@ -26,7 +26,7 @@ from src.transllm.fixtures.openai import (
     OPENAI_REASONING_RESPONSE,
     OPENAI_FULL_REQUEST,
 )
-from src.transllm.fixtures.anthropic import (
+from tests.fixtures.anthropic import (
     ANTHROPIC_CHAT_REQUEST,
     ANTHROPIC_CHAT_RESPONSE,
     ANTHROPIC_TOOL_REQUEST,

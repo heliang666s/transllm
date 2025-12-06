@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional
 
 from ...core.base_adapter import BaseAdapter
-from ...core.exceptions import ConversionError, ValidationError
-from ...ir.schema import (
+from ...core.exceptions import ValidationError
+from src.transllm.core.schema import (
     CoreRequest,
     CoreResponse,
     StreamEvent,
     Message,
-    ResponseMessage,
     UsageStatistics,
-    ContentBlock,
-    ToolCall,
     ToolDefinition,
     GenerationParameters,
+    Provider,
 )
 from .transformation import GeminiRequestTransformer
 from .response_handler import GeminiResponseHandler
@@ -36,21 +34,18 @@ class GeminiAdapter(BaseAdapter):
 
     def __init__(
         self,
-        provider_name: str = "gemini",
-        is_vertex: bool = False,
+        provider_name: Provider = Provider.gemini,
         model: Optional[str] = None
     ) -> None:
         """Initialize Gemini adapter
 
         Args:
-            provider_name: Provider identifier
-            is_vertex: Whether using Vertex AI (affects URL handling)
+            provider_name: Provider identifier (Provider enum)
             model: Model name for version-specific behavior
         """
         super().__init__(provider_name)
-        self.is_vertex = is_vertex
         self.model = model
-        self.request_transformer = GeminiRequestTransformer(is_vertex=is_vertex)
+        self.request_transformer = GeminiRequestTransformer()
         self.response_handler = GeminiResponseHandler()
 
     def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
@@ -187,12 +182,8 @@ class GeminiAdapter(BaseAdapter):
             )
 
         except Exception as e:
-            from_provider = self.provider_name
-            to_provider = "ir"
-            raise ConversionError(
-                f"Failed to convert Gemini request to unified format: {e}",
-                from_provider=from_provider,
-                to_provider=to_provider
+            raise ValidationError(
+                f"Failed to convert Gemini request to unified format: {e}"
             ) from e
 
     def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
@@ -281,8 +272,8 @@ class GeminiAdapter(BaseAdapter):
                 gemini_request["metadata"] = unified_request.metadata
 
             # Add thinking config if present (Gemini 2.x/3.x)
-            if unified_request.generation_params and unified_request.generation_params.thinking_blocks:
-                thinking_blocks = unified_request.generation_params.thinking_blocks
+            if unified_request.generation_params:
+                thinking_blocks = getattr(unified_request.generation_params, 'thinking_blocks', None)
                 if thinking_blocks:
                     gemini_request["thinkingConfig"] = thinking_blocks[0]
 
@@ -293,12 +284,8 @@ class GeminiAdapter(BaseAdapter):
             return gemini_request
 
         except Exception as e:
-            from_provider = "ir"
-            to_provider = self.provider_name
-            raise ConversionError(
-                f"Failed to convert unified request to Gemini format: {e}",
-                from_provider=from_provider,
-                to_provider=to_provider
+            raise ValidationError(
+                f"Failed to convert unified request to Gemini format: {e}"
             ) from e
 
     def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
@@ -338,7 +325,7 @@ class GeminiAdapter(BaseAdapter):
             message = self._extract_message_from_parts(parts)
 
             # Build choice
-            from ...ir.schema import Choice, ResponseMessage as IRResponseMessage, FinishReason
+            from src.transllm.core.schema import Choice, ResponseMessage as IRResponseMessage, FinishReason
             response_message = IRResponseMessage(
                 role=message["role"],
                 content=message["content"],
@@ -350,14 +337,28 @@ class GeminiAdapter(BaseAdapter):
             finish_reason_enum = None
             if finish_reason_str:
                 # Map Gemini finish reasons to IR
+                # Normalize to lowercase to handle Gemini's uppercase values (STOP, MAX_TOKENS, SAFETY, etc.)
                 reason_mapping = {
                     "stop": FinishReason.stop,
                     "length": FinishReason.length,
                     "content_filter": FinishReason.content_filter,
                     "tool_calls": FinishReason.tool_calls,
                     "safety": FinishReason.safety,
+                    "recitation": FinishReason.recitation,
+                    # Handle additional Gemini-specific finish reasons
+                    "max_tokens": FinishReason.length,  # MAX_TOKENS
+                    "language": FinishReason.content_filter,  # LANGUAGE
+                    "other": FinishReason.other,  # OTHER
+                    "blocklist": FinishReason.content_filter,  # BLOCKLIST
+                    "prohibited_content": FinishReason.content_filter,  # PROHIBITED_CONTENT
+                    "spii": FinishReason.content_filter,  # SPII
+                    "malformed_function_call": FinishReason.stop,  # MALFORMED_FUNCTION_CALL
+                    "image_safety": FinishReason.content_filter,  # IMAGE_SAFETY
+                    "finish_reason_unspecified": FinishReason.stop,  # FINISH_REASON_UNSPECIFIED
                 }
-                finish_reason_enum = reason_mapping.get(finish_reason_str, FinishReason.other)
+                # Convert Gemini's uppercase values to lowercase before lookup
+                normalized_reason = finish_reason_str.lower()
+                finish_reason_enum = reason_mapping.get(normalized_reason)
 
             choice = Choice(
                 index=0,
@@ -384,12 +385,8 @@ class GeminiAdapter(BaseAdapter):
             )
 
         except Exception as e:
-            from_provider = self.provider_name
-            to_provider = "ir"
-            raise ConversionError(
-                f"Failed to convert Gemini response to unified format: {e}",
-                from_provider=from_provider,
-                to_provider=to_provider
+            raise ValidationError(
+                f"Failed to convert Gemini response to unified format: {e}"
             ) from e
 
     def _extract_message_from_parts(self, parts: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -411,7 +408,7 @@ class GeminiAdapter(BaseAdapter):
             elif "function_call" in part:
                 func_call = part["function_call"]
                 # Convert to ToolCall object
-                from ...ir.schema import ToolCall
+                from src.transllm.core.schema import ToolCall
                 tool_call = ToolCall(
                     identifier=None,  # Gemini doesn't provide IDs
                     name=func_call["name"],
@@ -533,12 +530,8 @@ class GeminiAdapter(BaseAdapter):
             return gemini_response
 
         except Exception as e:
-            from_provider = "ir"
-            to_provider = self.provider_name
-            raise ConversionError(
-                f"Failed to convert unified response to Gemini format: {e}",
-                from_provider=from_provider,
-                to_provider=to_provider
+            raise ValidationError(
+                f"Failed to convert unified response to Gemini format: {e}"
             ) from e
 
     def transform_stream(

@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
-from ..ir.schema import ProviderIdentifier
+from ..core.schema import Provider
 
 
 @dataclass(frozen=True)
 class ProviderCapabilities:
     """Capabilities and limitations of an LLM provider"""
 
-    provider: Union[ProviderIdentifier, str]
+    provider: Provider
 
     # Core features
     supports_streaming: bool = True
@@ -66,28 +66,23 @@ class ProviderCapabilityMatrix:
         cls._capabilities[provider_key.lower()] = capabilities
 
     @classmethod
-    def get_capabilities(cls, provider: Union[ProviderIdentifier, str]) -> ProviderCapabilities:
+    def get_capabilities(cls, provider: Provider) -> ProviderCapabilities:
         """Get capabilities for a provider"""
         # Convert enum to string for lookup
-        provider_key = provider.value if hasattr(provider, 'value') else str(provider)
-        provider_key = provider_key.lower()
+        provider_key = provider.value.lower()
 
         if provider_key not in cls._capabilities:
             # Return default capabilities if not registered
-            # Convert back to enum if possible
-            if isinstance(provider, ProviderIdentifier):
-                return ProviderCapabilities(provider=provider)
-            else:
-                return ProviderCapabilities(provider=provider)
+            return ProviderCapabilities(provider=provider)
 
         return cls._capabilities[provider_key]
 
     @classmethod
-    def is_supported(cls, provider: Union[ProviderIdentifier, str], feature: str) -> bool:
+    def is_supported(cls, provider: Provider, feature: str) -> bool:
         """Check if a provider supports a specific feature
 
         Args:
-            provider: Provider name or enum
+            provider: Provider enum
             feature: Feature name (e.g., 'streaming', 'tools', 'multimodal')
 
         Returns:
@@ -99,8 +94,8 @@ class ProviderCapabilityMatrix:
     @classmethod
     def check_compatibility(
         cls,
-        from_provider: Union[ProviderIdentifier, str],
-        to_provider: Union[ProviderIdentifier, str],
+        from_provider: Provider,
+        to_provider: Provider,
         request_data: Dict[str, Any],
     ) -> tuple[list[str], list[str]]:
         """Check conversion compatibility between providers
@@ -171,7 +166,7 @@ class ProviderCapabilityMatrix:
 # Register known provider capabilities
 ProviderCapabilityMatrix.register(
     ProviderCapabilities(
-        provider="openai",
+        provider=Provider.openai,
         supports_streaming=True,
         supports_tools=True,
         supports_system_message=True,
@@ -190,7 +185,7 @@ ProviderCapabilityMatrix.register(
 
 ProviderCapabilityMatrix.register(
     ProviderCapabilities(
-        provider="anthropic",
+        provider=Provider.anthropic,
         supports_streaming=True,
         supports_tools=True,
         supports_system_message=True,
@@ -208,7 +203,7 @@ ProviderCapabilityMatrix.register(
 
 ProviderCapabilityMatrix.register(
     ProviderCapabilities(
-        provider="gemini",
+        provider=Provider.gemini,
         supports_streaming=True,
         supports_tools=True,
         supports_system_message=True,
@@ -224,7 +219,7 @@ ProviderCapabilityMatrix.register(
 
 ProviderCapabilityMatrix.register(
     ProviderCapabilities(
-        provider="azure_openai",
+        provider=Provider.azure_openai,
         supports_streaming=True,
         supports_tools=True,
         supports_system_message=True,
@@ -238,7 +233,7 @@ ProviderCapabilityMatrix.register(
 
 ProviderCapabilityMatrix.register(
     ProviderCapabilities(
-        provider="aws_bedrock",
+        provider=Provider.aws_bedrock,
         supports_streaming=True,
         supports_tools=True,
         supports_system_message=True,

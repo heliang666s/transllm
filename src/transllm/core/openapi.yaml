@@ -622,7 +622,7 @@ components:
 
     # ========== Provider Identifiers ==========
 
-    ProviderIdentifier:
+    Provider:
       type: string
       description: Supported LLM providers
       enum:

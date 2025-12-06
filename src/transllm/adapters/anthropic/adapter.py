@@ -13,12 +13,11 @@ Key design decisions based on litellm analysis:
 
 from __future__ import annotations
 
-import json
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from ..core.base_adapter import BaseAdapter
-from ..ir.schema import (
+from ...core.base_adapter import BaseAdapter
+from ...core.schema import (
     CoreRequest,
     CoreResponse,
     StreamEvent,
@@ -33,6 +32,7 @@ from ..ir.schema import (
     Type,
     Thinking,
     RedactedThinking,
+    Provider,
 )
 
 
@@ -46,7 +46,7 @@ class AnthropicAdapter(BaseAdapter):
     - Tool calls use tool_use content blocks instead of tool_calls array
     """
 
-    def __init__(self, provider_name: str = "anthropic") -> None:
+    def __init__(self, provider_name: Provider = Provider.anthropic) -> None:
         super().__init__(provider_name)
         # Map of finish_reason conversions: Anthropic → unified (OpenAI)
         self.finish_reason_map = {
@@ -153,21 +153,42 @@ class AnthropicAdapter(BaseAdapter):
         # Merge consecutive same-role messages
         messages = self._merge_consecutive_messages(unified_request.messages)
 
-        # Extract system message if present in messages
+        # Extract system messages from messages array (Anthropic doesn't support system role in messages)
         system_instruction = unified_request.system_instruction
-        if not system_instruction and messages and messages[0].role.value == "system":
-            # Extract system message from first message
-            system_msg = messages[0]
-            if isinstance(system_msg.content, str):
-                system_instruction = system_msg.content
-            elif isinstance(system_msg.content, list) and system_msg.content:
-                # Handle content blocks
-                system_instruction = ""
-                for block in system_msg.content:
-                    if hasattr(block, 'text') and block.text:
-                        system_instruction += block.text
-            # Remove system message from messages list
-            messages = messages[1:]
+        system_messages_content = []
+        non_system_messages = []
+
+        for msg in messages:
+            role_value = msg.role.value if hasattr(msg.role, 'value') else msg.role
+            if role_value == "system":
+                # Extract system message content
+                if isinstance(msg.content, str):
+                    system_messages_content.append(msg.content)
+                elif isinstance(msg.content, list) and msg.content:
+                    # Handle content blocks
+                    text_parts = []
+                    for block in msg.content:
+                        if hasattr(block, 'text') and block.text:
+                            text_parts.append(block.text)
+                    if text_parts:
+                        system_messages_content.append("".join(text_parts))
+            else:
+                non_system_messages.append(msg)
+
+        # Combine system messages, avoiding duplication
+        # Only merge if system_messages_content exists and is different from system_instruction
+        if system_messages_content:
+            system_messages_str = "\n\n".join(system_messages_content)
+            if system_instruction:
+                # Check if system_instruction already contains this content (to avoid duplication)
+                # This happens when OpenAI → IR → Anthropic conversion preserves system messages
+                if system_messages_str not in system_instruction:
+                    system_instruction = system_instruction + "\n\n" + system_messages_str
+            else:
+                system_instruction = system_messages_str
+
+        # Use non-system messages for conversion
+        messages = non_system_messages
 
         # Ensure first message is user - only add placeholder if there are messages
         # and the first one is not user
@@ -665,7 +686,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return content
 
-    def to_unified_stream_event(self, data: Dict[str, Any], sequence_id: int = 0, timestamp: float = 0.0) -> StreamEvent:
+    def _to_unified_stream_event_impl(self, data: Dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
         """Convert Anthropic stream event to unified IR format
 
         Anthropic uses different event types:

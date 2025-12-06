@@ -2,7 +2,7 @@
 
 import pytest
 from src.transllm.adapters.openai import OpenAIAdapter
-from src.transllm.fixtures.openai import (
+from tests.fixtures.openai import (
     OPENAI_JSON_MODE_REQUEST,
     OPENAI_LOGIT_BIAS_REQUEST,
     OPENAI_MULTI_COMPLETION_REQUEST,

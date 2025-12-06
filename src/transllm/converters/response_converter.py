@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from src.transllm.core.schema import Provider
 from ..utils.provider_registry import ProviderRegistry
 from ..core.exceptions import ConversionError, UnsupportedProviderError
 
@@ -14,18 +15,22 @@ class ResponseConverter:
     @staticmethod
     def convert(
         data: Dict[str, Any],
-        from_provider: str,
-        to_provider: str,
+        from_provider: Provider,
+        to_provider: Provider,
     ) -> Dict[str, Any]:
         """Convert response from one provider format to another
 
         Args:
             data: Response data in source provider format
-            from_provider: Source provider name
-            to_provider: Target provider name
+            from_provider: Source provider (Provider enum)
+            to_provider: Target provider (Provider enum)
 
         Returns:
             Response data in target provider format
+
+        Examples:
+            >>> # Using Provider enum (IDE autocomplete supported)
+            >>> ResponseConverter.convert(data, Provider.openai, Provider.anthropic)
 
         Raises:
             UnsupportedProviderError: If provider is not supported
@@ -61,7 +66,7 @@ class ResponseConverter:
             if isinstance(e, ConversionError):
                 raise
             raise ConversionError(
-                f"Failed to convert response from {from_provider} to {to_provider}",
+                f"Failed to convert response from {from_provider.value} to {to_provider.value}",
                 from_provider,
                 to_provider,
                 {"original_error": str(e)},
@@ -70,7 +75,7 @@ class ResponseConverter:
     @staticmethod
     def check_idempotency(
         data: Dict[str, Any],
-        provider: str,
+        provider: Provider,
     ) -> bool:
         """Check if conversion is idempotent (A -> IR -> A)
 

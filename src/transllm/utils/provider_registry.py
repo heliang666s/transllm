@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Type
 
+from src.transllm.core.schema import Provider
 from ..core.base_adapter import BaseAdapter
 from ..core.exceptions import UnsupportedProviderError
 
@@ -14,11 +15,11 @@ class ProviderRegistry:
     _adapters: Dict[str, Type[BaseAdapter]] = {}
 
     @classmethod
-    def register(cls, provider_name: str, adapter_class: Type[BaseAdapter]) -> None:
+    def register(cls, provider_name: Provider, adapter_class: Type[BaseAdapter]) -> None:
         """Register a provider adapter class
 
         Args:
-            provider_name: Name of the provider (e.g., 'openai', 'anthropic')
+            provider_name: Provider enum
             adapter_class: Adapter class for this provider
         """
         if not issubclass(adapter_class, BaseAdapter):
@@ -26,14 +27,15 @@ class ProviderRegistry:
                 f"Adapter must be a subclass of BaseAdapter, got {adapter_class}"
             )
 
-        cls._adapters[provider_name.lower()] = adapter_class
+        provider_key = provider_name.value.lower()
+        cls._adapters[provider_key] = adapter_class
 
     @classmethod
-    def get_adapter(cls, provider_name: str) -> BaseAdapter:
+    def get_adapter(cls, provider_name: Provider) -> BaseAdapter:
         """Get an instance of the adapter for a provider
 
         Args:
-            provider_name: Name of the provider
+            provider_name: Provider enum
 
         Returns:
             An instance of the provider's adapter
@@ -41,7 +43,7 @@ class ProviderRegistry:
         Raises:
             UnsupportedProviderError: If provider is not registered
         """
-        provider_key = provider_name.lower()
+        provider_key = provider_name.value.lower()
 
         if provider_key not in cls._adapters:
             raise UnsupportedProviderError(
@@ -62,25 +64,25 @@ class ProviderRegistry:
         return list(cls._adapters.keys())
 
     @classmethod
-    def is_supported(cls, provider_name: str) -> bool:
+    def is_supported(cls, provider_name: Provider) -> bool:
         """Check if a provider is supported
 
         Args:
-            provider_name: Name of the provider
+            provider_name: Provider enum
 
         Returns:
             True if provider is supported, False otherwise
         """
-        return provider_name.lower() in cls._adapters
+        return provider_name.value.lower() in cls._adapters
 
     @classmethod
-    def unregister(cls, provider_name: str) -> None:
+    def unregister(cls, provider_name: Provider) -> None:
         """Unregister a provider adapter
 
         Args:
-            provider_name: Name of the provider to unregister
+            provider_name: Provider enum to unregister
         """
-        provider_key = provider_name.lower()
+        provider_key = provider_name.value.lower()
         if provider_key in cls._adapters:
             del cls._adapters[provider_key]
 
@@ -91,12 +93,12 @@ class ProviderRegistry:
 
 
 # Convenience functions
-def register_adapter(provider_name: str, adapter_class: Type[BaseAdapter]) -> None:
+def register_adapter(provider_name: Provider, adapter_class: Type[BaseAdapter]) -> None:
     """Register a provider adapter"""
     ProviderRegistry.register(provider_name, adapter_class)
 
 
-def get_adapter(provider_name: str) -> BaseAdapter:
+def get_adapter(provider_name: Provider) -> BaseAdapter:
     """Get an adapter instance for a provider"""
     return ProviderRegistry.get_adapter(provider_name)
 
@@ -106,6 +108,6 @@ def list_providers() -> list[str]:
     return ProviderRegistry.list_supported_providers()
 
 
-def is_provider_supported(provider_name: str) -> bool:
+def is_provider_supported(provider_name: Provider) -> bool:
     """Check if a provider is supported"""
     return ProviderRegistry.is_supported(provider_name)

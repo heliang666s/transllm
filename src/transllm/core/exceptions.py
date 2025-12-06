@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .schema import Provider
 
 
 class TransLLMError(Exception):
@@ -16,24 +19,24 @@ class ConversionError(TransLLMError):
     def __init__(
         self,
         message: str,
-        from_provider: str,
-        to_provider: str,
+        from_provider: "Provider",
+        to_provider: "Provider",
         details: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(message)
-        self.from_provider = from_provider
-        self.to_provider = to_provider
+        self.from_provider = from_provider.value
+        self.to_provider = to_provider.value
         self.details = details or {}
 
 
 class UnsupportedProviderError(TransLLMError):
     """Raised when an unsupported provider is requested"""
 
-    def __init__(self, provider: str, supported_providers: list[str]) -> None:
-        self.provider = provider
+    def __init__(self, provider: "Provider", supported_providers: list[str]) -> None:
+        self.provider = provider.value
         self.supported_providers = supported_providers
         message = (
-            f"Unsupported provider: '{provider}'. "
+            f"Unsupported provider: '{self.provider}'. "
             f"Supported providers: {', '.join(supported_providers)}"
         )
         super().__init__(message)
@@ -45,13 +48,13 @@ class UnsupportedFeatureError(TransLLMError):
     def __init__(
         self,
         feature: str,
-        provider: str,
+        provider: "Provider",
         details: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.feature = feature
-        self.provider = provider
+        self.provider = provider.value
         self.details = details or {}
-        message = f"Provider '{provider}' does not support feature: '{feature}'"
+        message = f"Provider '{self.provider}' does not support feature: '{feature}'"
         super().__init__(message)
 
 

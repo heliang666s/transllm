@@ -7,7 +7,7 @@ and multi-block content structures.
 
 import pytest
 from src.transllm.adapters.anthropic import AnthropicAdapter
-from src.transllm.fixtures.anthropic import (
+from tests.fixtures.anthropic import (
     ANTHROPIC_THINKING_RESPONSE,
     ANTHROPIC_CACHE_RESPONSE,
 )

@@ -4,9 +4,8 @@ Tests verify that Gemini → IR → Gemini roundtrip conversions
 preserve basic features including messages, tools, and multimodal content.
 """
 
-import pytest
 from src.transllm.adapters.gemini import GeminiAdapter
-from src.transllm.ir.schema import Role, ResponseRoleType, FinishReason, Type
+from src.transllm.core.schema import Role, FinishReason, Type
 
 
 class TestGeminiBasicIdempotency:

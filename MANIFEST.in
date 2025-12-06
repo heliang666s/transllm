@@ -6,7 +6,7 @@ include pyproject.toml
 include MANIFEST.in
 
 # Include OpenAPI schema
-include src/transllm/ir/openapi.yaml
+include src/transllm/core/openapi.yaml
 
 # Include test fixtures
 recursive-include tests *.py

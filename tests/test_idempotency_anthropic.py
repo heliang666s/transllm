@@ -7,7 +7,7 @@ Tests verify that conversions are idempotent:
 
 import pytest
 from src.transllm.adapters.anthropic import AnthropicAdapter
-from src.transllm.fixtures.anthropic import (
+from tests.fixtures.anthropic import (
     ANTHROPIC_CHAT_REQUEST,
     ANTHROPIC_CHAT_RESPONSE,
     ANTHROPIC_SYSTEM_REQUEST,
