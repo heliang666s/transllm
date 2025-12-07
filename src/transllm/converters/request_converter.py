@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from src.transllm.core.schema import Provider
 from ..utils.provider_registry import ProviderRegistry
@@ -14,10 +14,10 @@ class RequestConverter:
 
     @staticmethod
     def convert(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         from_provider: Provider,
         to_provider: Provider,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert request from one provider format to another
 
         Args:
@@ -74,7 +74,7 @@ class RequestConverter:
 
     @staticmethod
     def check_idempotency(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         provider: Provider,
     ) -> bool:
         """Check if conversion is idempotent (A -> IR -> A)

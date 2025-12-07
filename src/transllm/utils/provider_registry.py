@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Type
+from typing import Type
 
 from src.transllm.core.schema import Provider
 from ..core.base_adapter import BaseAdapter
@@ -12,7 +12,7 @@ from ..core.exceptions import UnsupportedProviderError
 class ProviderRegistry:
     """Central registry for all provider adapters"""
 
-    _adapters: Dict[str, Type[BaseAdapter]] = {}
+    _adapters: dict[str, Type[BaseAdapter]] = {}
 
     @classmethod
     def register(cls, provider_name: Provider, adapter_class: Type[BaseAdapter]) -> None:

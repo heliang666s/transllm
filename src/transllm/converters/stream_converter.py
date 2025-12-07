@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from src.transllm.core.schema import Provider, StreamEvent
 from ..core import BaseAdapter
@@ -23,16 +23,16 @@ class StreamConverter:
     def __init__(self) -> None:
         """Initialize StreamConverter with empty state dictionary"""
         # State tracking for each provider: {provider: {sequence_id, start_time}}
-        self._adapter_states: Dict[Provider, Dict[str, Any]] = {}
+        self._adapter_states: dict[Provider, dict[str, Any]] = {}
         # Cache adapter instances to maintain state across stream events
-        self._cached_adapters: Dict[Provider, BaseAdapter] = {}
+        self._cached_adapters: dict[Provider, BaseAdapter] = {}
 
     def convert_stream_event(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         from_provider: Provider,
         to_provider: Provider,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert stream event from one provider format to another
 
         This is a convenience method that combines to_unified_event() and
@@ -45,14 +45,6 @@ class StreamConverter:
 
         Returns:
             Stream event data in target provider format
-
-        Examples:
-            >>> converter = StreamConverter()
-            >>> event = converter.convert_stream_event(
-            ...     {"choices": [{"delta": {"content": "Hello"}}]},
-            ...     Provider.openai,
-            ...     Provider.anthropic
-            ... )
 
         Raises:
             UnsupportedProviderError: If provider is not supported
@@ -68,7 +60,7 @@ class StreamConverter:
 
     def to_unified_event(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         from_provider: Provider,
     ) -> StreamEvent:
         """Convert stream event from provider format to unified format
@@ -116,7 +108,7 @@ class StreamConverter:
         self,
         unified_event: StreamEvent,
         to_provider: Provider,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert stream event from unified format to provider format
 
         Args:
@@ -218,7 +210,7 @@ class StreamConverter:
 
         return self._cached_adapters[provider]
 
-    def get_provider_state(self, provider: Provider) -> Dict[str, Any]:
+    def get_provider_state(self, provider: Provider) -> dict[str, Any]:
         """Get the current state for a provider
 
         Args:
@@ -239,7 +231,7 @@ class StreamConverter:
 
     def check_idempotency(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         provider: Provider,
     ) -> bool:
         """Check if stream event conversion is idempotent (A -> IR -> A)

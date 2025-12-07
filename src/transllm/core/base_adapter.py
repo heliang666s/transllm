@@ -5,15 +5,16 @@ from __future__ import annotations
 import json
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, TYPE_CHECKING
 
-from .schema import (
-    CoreRequest,
-    CoreResponse,
-    StreamEvent,
-    Message,
-    Provider,
-)
+if TYPE_CHECKING:
+    from .schema import (
+        CoreRequest,
+        CoreResponse,
+        StreamEvent,
+        Message,
+        Provider,
+    )
 from .aliases import ProviderAliases
 
 
@@ -32,29 +33,29 @@ class BaseAdapter(ABC):
 
         # Streaming state management (aligned with LiteLLM design)
         self._stream_sequence_id = 0
-        self._stream_start_time: Optional[float] = None
+        self._stream_start_time: float | None = None
 
     @abstractmethod
-    def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
+    def to_unified_request(self, data: dict[str, Any]) -> CoreRequest:
         """Convert provider-specific request to unified IR format"""
         pass
 
     @abstractmethod
-    def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
+    def from_unified_request(self, unified_request: CoreRequest) -> dict[str, Any]:
         """Convert unified IR request to provider-specific format"""
         pass
 
     @abstractmethod
-    def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
+    def to_unified_response(self, data: dict[str, Any]) -> CoreResponse:
         """Convert provider-specific response to unified IR format"""
         pass
 
     @abstractmethod
-    def from_unified_response(self, unified_response: CoreResponse) -> Dict[str, Any]:
+    def from_unified_response(self, unified_response: CoreResponse) -> dict[str, Any]:
         """Convert unified IR response to provider-specific format"""
         pass
 
-    def to_unified_message(self, data: Dict[str, Any]) -> Message:
+    def to_unified_message(self, data: dict[str, Any]) -> Message:
         """Convert provider-specific message to unified IR format"""
         # Default implementation - subclasses should override if needed
         role = data.get("role", "user")
@@ -68,7 +69,7 @@ class BaseAdapter(ABC):
             identifier=data.get("id"),
         )
 
-    def from_unified_message(self, unified_message: Message) -> Dict[str, Any]:
+    def from_unified_message(self, unified_message: Message) -> dict[str, Any]:
         """Convert unified IR message to provider-specific format"""
         # Default implementation - subclasses should override if needed
         return {
@@ -88,7 +89,7 @@ class BaseAdapter(ABC):
         self._stream_sequence_id = 0
         self._stream_start_time = None
 
-    def to_unified_stream_event(self, data: Dict[str, Any]) -> StreamEvent:
+    def to_unified_stream_event(self, data: dict[str, Any]) -> StreamEvent:
         """Convert provider-specific stream event to unified IR format.
 
         Automatically manages sequence_id and timestamp internally,
@@ -119,7 +120,7 @@ class BaseAdapter(ABC):
 
     def _to_unified_stream_event_impl(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         sequence_id: int,
         timestamp: float
     ) -> StreamEvent:
@@ -150,7 +151,7 @@ class BaseAdapter(ABC):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_stream_event(self, unified_event: StreamEvent) -> Dict[str, Any]:
+    def from_unified_stream_event(self, unified_event: StreamEvent) -> dict[str, Any]:
         """Convert unified IR stream event to provider-specific format"""
         # Default implementation - subclasses should override if needed
         return {
@@ -178,7 +179,7 @@ class BaseAdapter(ABC):
         self,
         from_provider: Provider,
         to_provider: Provider,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> None:
         """Validate if conversion is feasible between providers
 
@@ -195,8 +196,8 @@ class BaseAdapter(ABC):
 
     def check_idempotency(
         self,
-        original_data: Dict[str, Any],
-        final_data: Dict[str, Any],
+        original_data: dict[str, Any],
+        final_data: dict[str, Any],
         data_type: str,
     ) -> bool:
         """Check if conversion is idempotent (A -> IR -> A)"""
@@ -245,12 +246,12 @@ class RequestAdapter(BaseAdapter):
     """Adapter specialized for request conversion"""
 
     @abstractmethod
-    def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
+    def to_unified_request(self, data: dict[str, Any]) -> CoreRequest:
         """Convert provider request to unified IR"""
         pass
 
     @abstractmethod
-    def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
+    def from_unified_request(self, unified_request: CoreRequest) -> dict[str, Any]:
         """Convert unified IR request to provider format"""
         pass
 
@@ -259,12 +260,12 @@ class ResponseAdapter(BaseAdapter):
     """Adapter specialized for response conversion"""
 
     @abstractmethod
-    def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
+    def to_unified_response(self, data: dict[str, Any]) -> CoreResponse:
         """Convert provider response to unified IR"""
         pass
 
     @abstractmethod
-    def from_unified_response(self, unified_response: CoreResponse) -> Dict[str, Any]:
+    def from_unified_response(self, unified_response: CoreResponse) -> dict[str, Any]:
         """Convert unified IR response to provider format"""
         pass
 
@@ -273,11 +274,11 @@ class StreamAdapter(BaseAdapter):
     """Adapter specialized for streaming event conversion"""
 
     @abstractmethod
-    def to_unified_stream_event(self, data: Dict[str, Any]) -> StreamEvent:
+    def to_unified_stream_event(self, data: dict[str, Any]) -> StreamEvent:
         """Convert provider stream event to unified IR"""
         pass
 
     @abstractmethod
-    def from_unified_stream_event(self, unified_event: StreamEvent) -> Dict[str, Any]:
+    def from_unified_stream_event(self, unified_event: StreamEvent) -> dict[str, Any]:
         """Convert unified IR stream event to provider format"""
         pass

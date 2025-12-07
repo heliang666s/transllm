@@ -14,7 +14,7 @@ Key design decisions based on litellm analysis:
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ...core.base_adapter import BaseAdapter
 from ...core.schema import (
@@ -63,7 +63,7 @@ class AnthropicAdapter(BaseAdapter):
             "tool_calls": "tool_use",
         }
 
-    def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
+    def to_unified_request(self, data: dict[str, Any]) -> CoreRequest:
         """Convert Anthropic request to unified IR format"""
         # Extract system message
         system_instruction = None
@@ -148,7 +148,7 @@ class AnthropicAdapter(BaseAdapter):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
+    def from_unified_request(self, unified_request: CoreRequest) -> dict[str, Any]:
         """Convert unified IR request to Anthropic format"""
         # Merge consecutive same-role messages
         messages = self._merge_consecutive_messages(unified_request.messages)
@@ -266,7 +266,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return result
 
-    def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
+    def to_unified_response(self, data: dict[str, Any]) -> CoreResponse:
         """Convert Anthropic response to unified IR format"""
         choices = []
         content = data.get("content", [])
@@ -310,7 +310,7 @@ class AnthropicAdapter(BaseAdapter):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_response(self, unified_response: CoreResponse) -> Dict[str, Any]:
+    def from_unified_response(self, unified_response: CoreResponse) -> dict[str, Any]:
         """Convert unified IR response to Anthropic format"""
         # Anthropic response structure is different
         # It has a single content array and stop_reason
@@ -357,7 +357,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return result
 
-    def _to_unified_message(self, data: Dict[str, Any]) -> Message:
+    def _to_unified_message(self, data: dict[str, Any]) -> Message:
         """Convert Anthropic message to unified IR"""
         role = data.get("role", "user")
         content = data.get("content", "")
@@ -441,7 +441,7 @@ class AnthropicAdapter(BaseAdapter):
             cache_control=cache_control,
         )
 
-    def _from_unified_message(self, message: Message) -> Dict[str, Any]:
+    def _from_unified_message(self, message: Message) -> dict[str, Any]:
         """Convert unified message to Anthropic format"""
         content = message.content
         # Convert role enum to string if needed
@@ -556,7 +556,7 @@ class AnthropicAdapter(BaseAdapter):
         merged.append(current)
         return merged
 
-    def _extract_text_from_content_blocks(self, blocks: List[Dict[str, Any]]) -> str:
+    def _extract_text_from_content_blocks(self, blocks: list[dict[str, Any]]) -> str:
         """Extract text from content blocks"""
         texts = []
         for block in blocks:
@@ -564,7 +564,7 @@ class AnthropicAdapter(BaseAdapter):
                 texts.append(block.get("text", ""))
         return "\n".join(texts) if texts else ""
 
-    def _extract_tool_calls_from_content(self, content: List[ContentBlock]) -> Optional[List[ToolCall]]:
+    def _extract_tool_calls_from_content(self, content: list[ContentBlock]) -> list[ToolCall] |  None:
         """Extract tool_calls from content blocks"""
         tool_calls = []
         for block in content:
@@ -579,7 +579,7 @@ class AnthropicAdapter(BaseAdapter):
         return tool_calls if tool_calls else None
 
     def _convert_anthropic_response_to_choice(
-        self, content: List[Dict[str, Any]], stop_reason: str
+        self, content: list[dict[str, Any]], stop_reason: str
     ) -> Choice:
         """Convert Anthropic response content to unified Choice"""
         # Extract text and tool_calls from content blocks
@@ -635,7 +635,7 @@ class AnthropicAdapter(BaseAdapter):
             finish_reason=unified_finish_reason,
         )
 
-    def _response_message_to_anthropic_content(self, message: ResponseMessage) -> List[Dict[str, Any]]:
+    def _response_message_to_anthropic_content(self, message: ResponseMessage) -> list[dict[str, Any]]:
         """Convert response message to Anthropic content blocks"""
         content = []
 
@@ -686,7 +686,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return content
 
-    def _to_unified_stream_event_impl(self, data: Dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
+    def _to_unified_stream_event_impl(self, data: dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
         """Convert Anthropic stream event to unified IR format
 
         Anthropic uses different event types:
@@ -784,7 +784,7 @@ class AnthropicAdapter(BaseAdapter):
             metadata={"event": event_type, "raw": data},
         )
 
-    def from_unified_stream_event(self, unified_event: StreamEvent) -> Dict[str, Any]:
+    def from_unified_stream_event(self, unified_event: StreamEvent) -> dict[str, Any]:
         """Convert unified IR stream event to Anthropic format
 
         Maps unified event types back to Anthropic event format
@@ -885,7 +885,7 @@ class AnthropicAdapter(BaseAdapter):
             "metadata": metadata,
         }
 
-    def _add_beta_headers(self, request: Dict[str, Any]) -> None:
+    def _add_beta_headers(self, request: dict[str, Any]) -> None:
         """Add beta headers based on features used in request
 
         Intelligently detects Anthropic beta features and adds corresponding
@@ -919,7 +919,7 @@ class AnthropicAdapter(BaseAdapter):
         if headers:
             request["betas"] = sorted(list(headers))
 
-    def _has_cache_control(self, request: Dict[str, Any]) -> bool:
+    def _has_cache_control(self, request: dict[str, Any]) -> bool:
         """Check if request uses cache_control in any location"""
         # Check system-level cache control
         if "system" in request:
@@ -952,7 +952,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return False
 
-    def _has_vision_content(self, request: Dict[str, Any]) -> bool:
+    def _has_vision_content(self, request: dict[str, Any]) -> bool:
         """Check if request contains vision/image content"""
         if "messages" in request:
             for msg in request["messages"]:
@@ -969,7 +969,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return False
 
-    def _has_advanced_tool_types(self, request: Dict[str, Any]) -> bool:
+    def _has_advanced_tool_types(self, request: dict[str, Any]) -> bool:
         """Check if request uses advanced tool types (computer, hosted, MCP, etc.)
 
         Advanced tool types require the advanced-tool-use beta.

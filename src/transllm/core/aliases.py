@@ -2,7 +2,6 @@
 # Each provider maps their native field names to the brand-neutral IR fields
 # This enables bidirectional conversion between any two providers
 
-from typing import Dict, Any
 
 
 class ProviderAliases:
@@ -356,7 +355,7 @@ class ProviderAliases:
     }
 
     @classmethod
-    def get_provider_aliases(cls, provider: str) -> Dict[str, str]:
+    def get_provider_aliases(cls, provider: str) -> dict[str, str]:
         """Get the alias mapping for a specific provider"""
         provider_key = provider.upper().replace("-", "_")
         aliases = getattr(cls, provider_key, None)
@@ -376,14 +375,14 @@ class ProviderAliases:
         return providers
 
     @classmethod
-    def get_reverse_mapping(cls, provider: str) -> Dict[str, str]:
+    def get_reverse_mapping(cls, provider: str) -> dict[str, str]:
         """Get reverse mapping (IR -> provider) for a specific provider"""
         aliases = cls.get_provider_aliases(provider)
         return {v: k for k, v in aliases.items()}
 
 
 # Convenience function to get aliases
-def get_provider_aliases(provider: str) -> Dict[str, str]:
+def get_provider_aliases(provider: str) -> dict[str, str]:
     """Get field aliases for a provider"""
     return ProviderAliases.get_provider_aliases(provider)
 
@@ -393,6 +392,6 @@ def list_supported_providers() -> list:
     return ProviderAliases.list_supported_providers()
 
 
-def get_reverse_aliases(provider: str) -> Dict[str, str]:
+def get_reverse_aliases(provider: str) -> dict[str, str]:
     """Get reverse aliases (IR -> provider) for a provider"""
     return ProviderAliases.get_reverse_mapping(provider)

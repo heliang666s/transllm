@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .schema import Provider
@@ -21,7 +21,7 @@ class ConversionError(TransLLMError):
         message: str,
         from_provider: "Provider",
         to_provider: "Provider",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.from_provider = from_provider.value
@@ -49,7 +49,7 @@ class UnsupportedFeatureError(TransLLMError):
         self,
         feature: str,
         provider: "Provider",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         self.feature = feature
         self.provider = provider.value
@@ -64,7 +64,7 @@ class ValidationError(TransLLMError):
     def __init__(
         self,
         message: str,
-        validation_errors: Optional[list[str]] = None,
+        validation_errors: list[str] | None = None,
     ) -> None:
         super().__init__(message)
         self.validation_errors = validation_errors or []
@@ -75,8 +75,8 @@ class IdempotencyError(TransLLMError):
 
     def __init__(
         self,
-        original_data: Dict[str, Any],
-        final_data: Dict[str, Any],
+        original_data: dict[str, Any],
+        final_data: dict[str, Any],
         differences: list[str],
     ) -> None:
         self.original_data = original_data

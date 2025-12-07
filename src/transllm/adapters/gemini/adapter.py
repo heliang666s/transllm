@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator
 
 from ...core.base_adapter import BaseAdapter
 from ...core.exceptions import ValidationError
@@ -35,7 +35,7 @@ class GeminiAdapter(BaseAdapter):
     def __init__(
         self,
         provider_name: Provider = Provider.gemini,
-        model: Optional[str] = None
+        model: str | None = None
     ) -> None:
         """Initialize Gemini adapter
 
@@ -48,7 +48,7 @@ class GeminiAdapter(BaseAdapter):
         self.request_transformer = GeminiRequestTransformer()
         self.response_handler = GeminiResponseHandler()
 
-    def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
+    def to_unified_request(self, data: dict[str, Any]) -> CoreRequest:
         """Convert Gemini request to unified IR format
 
         Args:
@@ -186,7 +186,7 @@ class GeminiAdapter(BaseAdapter):
                 f"Failed to convert Gemini request to unified format: {e}"
             ) from e
 
-    def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
+    def from_unified_request(self, unified_request: CoreRequest) -> dict[str, Any]:
         """Convert unified IR request to Gemini format
 
         Args:
@@ -204,7 +204,7 @@ class GeminiAdapter(BaseAdapter):
             self._validate_unified_request(unified_request)
 
             # Build Gemini request
-            gemini_request: Dict[str, Any] = {
+            gemini_request: dict[str, Any] = {
                 "model": unified_request.model or self.model or "gemini-1.5-pro"
             }
 
@@ -288,7 +288,7 @@ class GeminiAdapter(BaseAdapter):
                 f"Failed to convert unified request to Gemini format: {e}"
             ) from e
 
-    def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
+    def to_unified_response(self, data: dict[str, Any]) -> CoreResponse:
         """Convert Gemini response to unified IR format
 
         Args:
@@ -389,7 +389,7 @@ class GeminiAdapter(BaseAdapter):
                 f"Failed to convert Gemini response to unified format: {e}"
             ) from e
 
-    def _extract_message_from_parts(self, parts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _extract_message_from_parts(self, parts: list[dict[str, Any]]) -> dict[str, Any]:
         """Extract message from Gemini parts
 
         Args:
@@ -435,7 +435,7 @@ class GeminiAdapter(BaseAdapter):
 
         return message
 
-    def from_unified_response(self, unified_response: CoreResponse) -> Dict[str, Any]:
+    def from_unified_response(self, unified_response: CoreResponse) -> dict[str, Any]:
         """Convert unified IR response to Gemini format
 
         Args:
@@ -450,7 +450,7 @@ class GeminiAdapter(BaseAdapter):
         """
         try:
             # Build Gemini response from unified response
-            gemini_response: Dict[str, Any] = {
+            gemini_response: dict[str, Any] = {
                 "id": unified_response.id or f"gemini-{hash(str(unified_response))}",
                 "model": unified_response.model,
                 "createTime": unified_response.created or 0,
@@ -536,7 +536,7 @@ class GeminiAdapter(BaseAdapter):
 
     def transform_stream(
         self,
-        stream: Generator[Dict[str, Any], None, None]
+        stream: Generator[dict[str, Any], None, None]
     ) -> Generator[StreamEvent, None, None]:
         """Transform Gemini streaming response to unified IR
 
@@ -581,7 +581,7 @@ class GeminiAdapter(BaseAdapter):
             if not msg.content and not msg.tool_calls:
                 raise ValidationError("Message must have content or tool calls")
 
-    def _message_to_dict(self, message: Message) -> Dict[str, Any]:
+    def _message_to_dict(self, message: Message) -> dict[str, Any]:
         """Convert unified Message to Gemini dict format
 
         Args:
@@ -681,7 +681,7 @@ class GeminiAdapter(BaseAdapter):
 
         return result
 
-    def get_supported_features(self) -> Dict[str, bool]:
+    def get_supported_features(self) -> dict[str, bool]:
         """Get list of features supported by this adapter
 
         Returns:
@@ -697,7 +697,7 @@ class GeminiAdapter(BaseAdapter):
             "structured_output": True,
         }
 
-    def get_model_capabilities(self, model: Optional[str] = None) -> Dict[str, Any]:
+    def get_model_capabilities(self, model: str | None = None) -> dict[str, Any]:
         """Get model-specific capabilities
 
         Args:

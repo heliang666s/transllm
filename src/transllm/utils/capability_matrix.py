@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from ..core.schema import Provider
 
@@ -56,7 +56,7 @@ class ProviderCapabilities:
 class ProviderCapabilityMatrix:
     """Registry of all provider capabilities"""
 
-    _capabilities: Dict[str, ProviderCapabilities] = {}
+    _capabilities: dict[str, ProviderCapabilities] = {}
 
     @classmethod
     def register(cls, capabilities: ProviderCapabilities) -> None:
@@ -96,7 +96,7 @@ class ProviderCapabilityMatrix:
         cls,
         from_provider: Provider,
         to_provider: Provider,
-        request_data: Dict[str, Any],
+        request_data: dict[str, Any],
     ) -> tuple[list[str], list[str]]:
         """Check conversion compatibility between providers
 

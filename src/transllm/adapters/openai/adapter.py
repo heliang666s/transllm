@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 
 from ...core.base_adapter import BaseAdapter
 from ...core.schema import (
@@ -33,7 +33,7 @@ class OpenAIAdapter(BaseAdapter):
     def __init__(self, provider_name: Provider = Provider.openai) -> None:
         super().__init__(provider_name)
 
-    def to_unified_request(self, data: Dict[str, Any]) -> CoreRequest:
+    def to_unified_request(self, data: dict[str, Any]) -> CoreRequest:
         """Convert OpenAI chat completion request to unified IR"""
         # Extract system instruction - either from dedicated field or from messages array
         system_instruction = data.get("system_instruction")
@@ -123,7 +123,7 @@ class OpenAIAdapter(BaseAdapter):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_request(self, unified_request: CoreRequest) -> Dict[str, Any]:
+    def from_unified_request(self, unified_request: CoreRequest) -> dict[str, Any]:
         """Convert unified IR request to OpenAI format"""
         messages = []
 
@@ -218,7 +218,7 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def to_unified_response(self, data: Dict[str, Any]) -> CoreResponse:
+    def to_unified_response(self, data: dict[str, Any]) -> CoreResponse:
         """Convert OpenAI chat completion response to unified IR"""
         choices = []
         for choice_data in data.get("choices", []):
@@ -263,7 +263,7 @@ class OpenAIAdapter(BaseAdapter):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_response(self, unified_response: CoreResponse) -> Dict[str, Any]:
+    def from_unified_response(self, unified_response: CoreResponse) -> dict[str, Any]:
         """Convert unified IR response to OpenAI format"""
         choices = []
         for choice in unified_response.choices:
@@ -321,7 +321,7 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def _convert_choice(self, choice_data: Dict[str, Any]) -> Choice:
+    def _convert_choice(self, choice_data: dict[str, Any]) -> Choice:
         """Convert OpenAI choice to unified IR"""
         message_data = choice_data.get("message", {})
         message = self._convert_response_message(message_data)
@@ -333,7 +333,7 @@ class OpenAIAdapter(BaseAdapter):
             logprobs=choice_data.get("logprobs"),
         )
 
-    def _convert_response_message(self, message_data: Dict[str, Any]) -> ResponseMessage:
+    def _convert_response_message(self, message_data: dict[str, Any]) -> ResponseMessage:
         """Convert OpenAI message to unified IR"""
         content = message_data.get("content", "")
 
@@ -370,7 +370,7 @@ class OpenAIAdapter(BaseAdapter):
             identifier=message_data.get("id"),
         )
 
-    def _convert_message(self, message_data: Dict[str, Any]) -> Message:
+    def _convert_message(self, message_data: dict[str, Any]) -> Message:
         """Convert OpenAI message to unified IR"""
         content = message_data.get("content", "")
 
@@ -452,7 +452,7 @@ class OpenAIAdapter(BaseAdapter):
             identifier=message_data.get("id"),
         )
 
-    def _extract_system_instruction_from_message(self, message: Message) -> Optional[str]:
+    def _extract_system_instruction_from_message(self, message: Message) -> str | None:
         """Helper to pull the human-readable text out of system messages"""
         content = message.content
         if isinstance(content, str) and content:
@@ -471,7 +471,7 @@ class OpenAIAdapter(BaseAdapter):
                 return "".join(text_parts)
         return None
 
-    def _response_message_to_dict(self, response_message: ResponseMessage) -> Dict[str, Any]:
+    def _response_message_to_dict(self, response_message: ResponseMessage) -> dict[str, Any]:
         """Convert ResponseMessage Pydantic model to dict"""
         # Convert enum to string
         role_str = response_message.role.value if hasattr(response_message.role, 'value') else str(response_message.role)
@@ -539,11 +539,11 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def to_unified_message(self, data: Dict[str, Any]) -> Message:
+    def to_unified_message(self, data: dict[str, Any]) -> Message:
         """Convert OpenAI message to unified IR"""
         return self._convert_message(data)
 
-    def from_unified_message(self, unified_message: Message) -> Dict[str, Any]:
+    def from_unified_message(self, unified_message: Message) -> dict[str, Any]:
         """Convert unified IR message to OpenAI format"""
         # Convert enum to string
         role_str = unified_message.role.value if hasattr(unified_message.role, 'value') else str(unified_message.role)
@@ -605,7 +605,7 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def _to_unified_stream_event_impl(self, data: Dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
+    def _to_unified_stream_event_impl(self, data: dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
         """Convert OpenAI stream event to unified IR"""
         # OpenAI uses delta chunks in choices
         choice = data.get("choices", [{}])[0]
@@ -647,7 +647,7 @@ class OpenAIAdapter(BaseAdapter):
             metadata=data.get("metadata"),
         )
 
-    def from_unified_stream_event(self, unified_event: StreamEvent) -> Dict[str, Any]:
+    def from_unified_stream_event(self, unified_event: StreamEvent) -> dict[str, Any]:
         """Convert unified IR stream event to OpenAI format"""
         # OpenAI uses delta chunks
         delta = {}
