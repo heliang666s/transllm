@@ -1,12 +1,10 @@
 from openai import OpenAI
-from src.transllm.adapters.openai import OpenAIAdapter
-from src.transllm.adapters.anthropic import AnthropicAdapter
 from src.transllm.converters.request_converter import RequestConverter
+from src.transllm.converters.stream_converter import StreamConverter
 from src.transllm.core.schema import Provider
 
 client = OpenAI()
-openai_adapter = OpenAIAdapter()
-anthropic_adapter = AnthropicAdapter()
+converter = StreamConverter()
 
 stream = client.chat.completions.create(
     model="gpt-5",
@@ -15,12 +13,15 @@ stream = client.chat.completions.create(
 )
 
 for chunk in stream:
-    event = openai_adapter.to_unified_stream_event(chunk.model_dump())
-    anthropic_event = anthropic_adapter.from_unified_stream_event(event)
+    anthropic_event = converter.convert_stream_event(
+        chunk.model_dump(),
+        Provider.openai,
+        Provider.anthropic
+    )
     print(f"[Anthropic] {anthropic_event}", flush=True)
 
 response = client.chat.completions.create(
-    model="gpt-4o-mini",
+    model="gpt-5",
     messages=[{"role": "user", "content": "Write a one-sentence bedtime story about a unicorn."}],
     stream=False
 )
