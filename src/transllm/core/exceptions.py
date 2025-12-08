@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 class TransLLMError(Exception):
     """Base exception for all TransLLM errors"""
+
     pass
 
 

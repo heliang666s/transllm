@@ -246,9 +246,7 @@ OPENAI_PARALLEL_TOOLS_REQUEST = {
                 "description": "Get weather information",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "location": {"type": "string"}
-                    },
+                    "properties": {"location": {"type": "string"}},
                     "required": ["location"],
                 },
             },
@@ -260,13 +258,11 @@ OPENAI_PARALLEL_TOOLS_REQUEST = {
                 "description": "Get news headlines",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "category": {"type": "string"}
-                    },
+                    "properties": {"category": {"type": "string"}},
                     "required": ["category"],
                 },
             },
-        }
+        },
     ],
     "parallel_tool_calls": True,
 }
@@ -390,4 +386,3 @@ OPENAI_MAX_COMPLETION_TOKENS_REQUEST = {
     ],
     "max_completion_tokens": 500,
 }
-

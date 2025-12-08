@@ -45,14 +45,20 @@ class TestOpenAIReasoningContentIdempotency:
         unified = self.adapter.to_unified_response(openai_resp)
 
         # Verify reasoning_content in IR
-        assert unified.choices[0].message.reasoning_content == "Let me work through this problem step by step..."
+        assert (
+            unified.choices[0].message.reasoning_content
+            == "Let me work through this problem step by step..."
+        )
 
         # IR → OpenAI
         openai_resp2 = self.adapter.from_unified_response(unified)
 
         # Verify reasoning_content preserved
         assert "reasoning_content" in openai_resp2["choices"][0]["message"]
-        assert openai_resp2["choices"][0]["message"]["reasoning_content"] == "Let me work through this problem step by step..."
+        assert (
+            openai_resp2["choices"][0]["message"]["reasoning_content"]
+            == "Let me work through this problem step by step..."
+        )
 
 
 class TestOpenAIJSONModeIdempotency:
@@ -124,7 +130,10 @@ class TestOpenAIJSONModeIdempotency:
         openai_resp2 = self.adapter.from_unified_response(unified)
 
         # Verify JSON content preserved
-        assert openai_resp2["choices"][0]["message"]["content"] == '{"name": "John", "age": 30}'
+        assert (
+            openai_resp2["choices"][0]["message"]["content"]
+            == '{"name": "John", "age": 30}'
+        )
 
 
 class TestOpenAILogprobsIdempotency:
@@ -368,9 +377,18 @@ class TestOpenAIMultipleCompletionsIdempotency:
 
         # Verify all 3 choices preserved
         assert len(openai_resp2["choices"]) == 3
-        assert openai_resp2["choices"][0]["message"]["content"] == "Idea 1: Use machine learning..."
-        assert openai_resp2["choices"][1]["message"]["content"] == "Idea 2: Implement automation..."
-        assert openai_resp2["choices"][2]["message"]["content"] == "Idea 3: Create microservices..."
+        assert (
+            openai_resp2["choices"][0]["message"]["content"]
+            == "Idea 1: Use machine learning..."
+        )
+        assert (
+            openai_resp2["choices"][1]["message"]["content"]
+            == "Idea 2: Implement automation..."
+        )
+        assert (
+            openai_resp2["choices"][2]["message"]["content"]
+            == "Idea 3: Create microservices..."
+        )
 
 
 if __name__ == "__main__":

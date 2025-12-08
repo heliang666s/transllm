@@ -62,7 +62,11 @@ class ProviderCapabilityMatrix:
     def register(cls, capabilities: ProviderCapabilities) -> None:
         """Register capabilities for a provider"""
         # Convert enum to string for storage
-        provider_key = capabilities.provider.value if hasattr(capabilities.provider, 'value') else str(capabilities.provider)
+        provider_key = (
+            capabilities.provider.value
+            if hasattr(capabilities.provider, "value")
+            else str(capabilities.provider)
+        )
         cls._capabilities[provider_key.lower()] = capabilities
 
     @classmethod
@@ -106,7 +110,6 @@ class ProviderCapabilityMatrix:
         errors = []
         warnings = []
 
-        from_caps = cls.get_capabilities(from_provider)
         to_caps = cls.get_capabilities(to_provider)
 
         # Check tool support
@@ -125,17 +128,21 @@ class ProviderCapabilityMatrix:
                 )
 
         # Check system message
-        if request_data.get("system_instruction") and not to_caps.supports_system_message:
+        if (
+            request_data.get("system_instruction")
+            and not to_caps.supports_system_message
+        ):
             warnings.append(
                 f"Target provider '{to_provider}' does not support "
                 "system messages (will be converted to user message)"
             )
 
         # Check streaming
-        if request_data.get("generation_params", {}).get("stream") and not to_caps.supports_streaming:
-            errors.append(
-                f"Target provider '{to_provider}' does not support streaming"
-            )
+        if (
+            request_data.get("generation_params", {}).get("stream")
+            and not to_caps.supports_streaming
+        ):
+            errors.append(f"Target provider '{to_provider}' does not support streaming")
 
         # Check thinking mode
         if any(

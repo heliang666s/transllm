@@ -20,20 +20,10 @@ from src.transllm.adapters.anthropic import AnthropicAdapter
 from tests.fixtures.openai import (
     OPENAI_CHAT_REQUEST,
     OPENAI_CHAT_RESPONSE,
-    OPENAI_TOOL_REQUEST,
-    OPENAI_TOOL_RESPONSE,
-    OPENAI_PARALLEL_TOOLS_REQUEST,
-    OPENAI_REASONING_RESPONSE,
-    OPENAI_FULL_REQUEST,
 )
 from tests.fixtures.anthropic import (
     ANTHROPIC_CHAT_REQUEST,
     ANTHROPIC_CHAT_RESPONSE,
-    ANTHROPIC_TOOL_REQUEST,
-    ANTHROPIC_TOOL_RESPONSE,
-    ANTHROPIC_SYSTEM_REQUEST,
-    ANTHROPIC_THINKING_RESPONSE,
-    ANTHROPIC_CACHE_RESPONSE,
 )
 
 
@@ -170,9 +160,6 @@ class TestSystemMessageConversion:
 
         # Should have system_instruction
         assert unified.system_instruction == "You are a helpful assistant."
-
-        # IR → OpenAI
-        openai_req = self.openai_adapter.from_unified_request(unified)
 
         # IMPORTANT: OpenAI should reconstruct system message in array (future implementation)
         # For now, we verify the system_instruction is preserved in IR
@@ -703,7 +690,10 @@ class TestThinkingContentConversion:
         unified = self.openai_adapter.to_unified_response(openai_resp)
 
         # IR should preserve reasoning_content
-        assert unified.choices[0].message.reasoning_content == "Let me work through this problem step by step..."
+        assert (
+            unified.choices[0].message.reasoning_content
+            == "Let me work through this problem step by step..."
+        )
 
     def test_anthropic_thinking_blocks_structure(self):
         """Anthropic thinking blocks should be properly handled"""

@@ -95,11 +95,16 @@ def test_reasoning_content_idempotency():
     unified_response = adapter.to_unified_response(OPENAI_REASONING_RESPONSE)
     assert len(unified_response.choices) == 1
     choice = unified_response.choices[0]
-    assert choice.message.reasoning_content == "Let me work through this problem step by step..."
+    assert (
+        choice.message.reasoning_content
+        == "Let me work through this problem step by step..."
+    )
 
     openai_response = adapter.from_unified_response(unified_response)
-    assert openai_response["choices"][0]["message"]["reasoning_content"] == \
-           "Let me work through this problem step by step..."
+    assert (
+        openai_response["choices"][0]["message"]["reasoning_content"]
+        == "Let me work through this problem step by step..."
+    )
     assert openai_response == OPENAI_REASONING_RESPONSE
 
 

@@ -73,7 +73,9 @@ class AnthropicAdapter(BaseAdapter):
                 system_instruction = system_value
             elif isinstance(system_value, list):
                 # System can be a list of content blocks
-                system_instruction = self._extract_text_from_content_blocks(system_value)
+                system_instruction = self._extract_text_from_content_blocks(
+                    system_value
+                )
 
         # Convert messages
         messages = []
@@ -102,7 +104,10 @@ class AnthropicAdapter(BaseAdapter):
             if isinstance(tc_data, dict):
                 # Handle dict format
                 if tc_data.get("type") == "tool":
-                    tool_choice = {"type": "function", "function": {"name": tc_data.get("name")}}
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tc_data.get("name")},
+                    }
                 else:
                     tool_choice = tc_data.get("type", "auto")
             else:
@@ -159,7 +164,7 @@ class AnthropicAdapter(BaseAdapter):
         non_system_messages = []
 
         for msg in messages:
-            role_value = msg.role.value if hasattr(msg.role, 'value') else msg.role
+            role_value = msg.role.value if hasattr(msg.role, "value") else msg.role
             if role_value == "system":
                 # Extract system message content
                 if isinstance(msg.content, str):
@@ -168,7 +173,7 @@ class AnthropicAdapter(BaseAdapter):
                     # Handle content blocks
                     text_parts = []
                     for block in msg.content:
-                        if hasattr(block, 'text') and block.text:
+                        if hasattr(block, "text") and block.text:
                             text_parts.append(block.text)
                     if text_parts:
                         system_messages_content.append("".join(text_parts))
@@ -183,7 +188,9 @@ class AnthropicAdapter(BaseAdapter):
                 # Check if system_instruction already contains this content (to avoid duplication)
                 # This happens when OpenAI → IR → Anthropic conversion preserves system messages
                 if system_messages_str not in system_instruction:
-                    system_instruction = system_instruction + "\n\n" + system_messages_str
+                    system_instruction = (
+                        system_instruction + "\n\n" + system_messages_str
+                    )
             else:
                 system_instruction = system_messages_str
 
@@ -213,7 +220,10 @@ class AnthropicAdapter(BaseAdapter):
 
         # Add max_tokens (required by Anthropic)
         max_tokens = 1024
-        if unified_request.generation_params and unified_request.generation_params.max_tokens:
+        if (
+            unified_request.generation_params
+            and unified_request.generation_params.max_tokens
+        ):
             max_tokens = unified_request.generation_params.max_tokens
         result["max_tokens"] = max_tokens
 
@@ -238,7 +248,9 @@ class AnthropicAdapter(BaseAdapter):
             # Reverse mapping: parallel_tool_calls → disable_parallel_tool_use
             if not result.get("tool_choice"):
                 result["tool_choice"] = {}
-            result["tool_choice"]["disable_parallel_tool_use"] = not unified_request.parallel_tool_calls
+            result["tool_choice"][
+                "disable_parallel_tool_use"
+            ] = not unified_request.parallel_tool_calls
 
         # Add generation parameters
         if unified_request.generation_params:
@@ -329,9 +341,15 @@ class AnthropicAdapter(BaseAdapter):
         # Map finish reason back to Anthropic format
         anthropic_stop_reason = "end_turn"
         if finish_reason:
-            reason_str = finish_reason.value if hasattr(finish_reason, 'value') else str(finish_reason)
+            reason_str = (
+                finish_reason.value
+                if hasattr(finish_reason, "value")
+                else str(finish_reason)
+            )
             # Use reverse mapping from unified to Anthropic
-            anthropic_stop_reason = self.reverse_finish_reason_map.get(reason_str, "end_turn")
+            anthropic_stop_reason = self.reverse_finish_reason_map.get(
+                reason_str, "end_turn"
+            )
 
         result = {
             "id": unified_response.id,
@@ -347,9 +365,13 @@ class AnthropicAdapter(BaseAdapter):
             }
             # Preserve cache-related tokens
             if unified_response.usage.cache_creation_input_tokens is not None:
-                usage_dict["cache_creation_input_tokens"] = unified_response.usage.cache_creation_input_tokens
+                usage_dict["cache_creation_input_tokens"] = (
+                    unified_response.usage.cache_creation_input_tokens
+                )
             if unified_response.usage.cache_read_input_tokens is not None:
-                usage_dict["cache_read_input_tokens"] = unified_response.usage.cache_read_input_tokens
+                usage_dict["cache_read_input_tokens"] = (
+                    unified_response.usage.cache_read_input_tokens
+                )
             result["usage"] = usage_dict
 
         if unified_response.metadata:
@@ -391,7 +413,9 @@ class AnthropicAdapter(BaseAdapter):
                             type="image_url",
                             image_url={
                                 "url": image_data.get("url") or image_data.get("data"),
-                                "detail": "high" if image_data.get("media_type") else None,
+                                "detail": "high"
+                                if image_data.get("media_type")
+                                else None,
                             },
                         )
                     )
@@ -401,7 +425,9 @@ class AnthropicAdapter(BaseAdapter):
                             type="tool_result",
                             tool_result={
                                 "tool_name": block.get("tool_use_id", ""),
-                                "result": {"content": block.get("content")} if isinstance(block.get("content"), str) else block.get("content"),
+                                "result": {"content": block.get("content")}
+                                if isinstance(block.get("content"), str)
+                                else block.get("content"),
                             },
                         )
                     )
@@ -418,7 +444,9 @@ class AnthropicAdapter(BaseAdapter):
                     content_blocks.append(
                         ContentBlock(
                             type="redacted_thinking",
-                            redacted_thinking=RedactedThinking(content="[redacted thinking]"),
+                            redacted_thinking=RedactedThinking(
+                                content="[redacted thinking]"
+                            ),
                         )
                     )
             # Always use converted content_blocks when original is a list
@@ -445,7 +473,9 @@ class AnthropicAdapter(BaseAdapter):
         """Convert unified message to Anthropic format"""
         content = message.content
         # Convert role enum to string if needed
-        role = message.role.value if hasattr(message.role, 'value') else str(message.role)
+        role = (
+            message.role.value if hasattr(message.role, "value") else str(message.role)
+        )
         result = {"role": role}
 
         # Convert content to Anthropic format
@@ -458,23 +488,39 @@ class AnthropicAdapter(BaseAdapter):
                 if isinstance(block, ContentBlock):
                     # Compare against Enum value
                     if block.type == Type.text or block.type == "text":
-                        anthropic_content.append({"type": "text", "text": block.text or ""})
+                        anthropic_content.append(
+                            {"type": "text", "text": block.text or ""}
+                        )
                     elif block.type == Type.image_url or block.type == "image_url":
                         image_url = block.image_url or {}
-                        url_value = image_url.url if hasattr(image_url, 'url') else image_url.get("url", "")
+                        url_value = (
+                            image_url.url
+                            if hasattr(image_url, "url")
+                            else image_url.get("url", "")
+                        )
                         anthropic_content.append(
                             {
                                 "type": "image",
                                 "source": {
-                                    "type": "base64" if url_value.startswith("data:") else "url",
+                                    "type": "base64"
+                                    if url_value.startswith("data:")
+                                    else "url",
                                     "url": url_value,
                                 },
                             }
                         )
                     elif block.type == Type.tool_result or block.type == "tool_result":
                         tool_result = block.tool_result or {}
-                        tool_name = tool_result.tool_name if hasattr(tool_result, 'tool_name') else tool_result.get("tool_name", "")
-                        result_data = tool_result.result if hasattr(tool_result, 'result') else tool_result.get("result", "")
+                        tool_name = (
+                            tool_result.tool_name
+                            if hasattr(tool_result, "tool_name")
+                            else tool_result.get("tool_name", "")
+                        )
+                        result_data = (
+                            tool_result.result
+                            if hasattr(tool_result, "result")
+                            else tool_result.get("result", "")
+                        )
                         anthropic_content.append(
                             {
                                 "type": "tool_result",
@@ -484,14 +530,23 @@ class AnthropicAdapter(BaseAdapter):
                         )
                     elif block.type == Type.thinking or block.type == "thinking":
                         thinking = block.thinking
-                        thinking_content = thinking.content if hasattr(thinking, 'content') else thinking.get("content", "") if isinstance(thinking, dict) else ""
+                        thinking_content = (
+                            thinking.content
+                            if hasattr(thinking, "content")
+                            else thinking.get("content", "")
+                            if isinstance(thinking, dict)
+                            else ""
+                        )
                         anthropic_content.append(
                             {
                                 "type": "thinking",
                                 "thinking": thinking_content,
                             }
                         )
-                    elif block.type == Type.redacted_thinking or block.type == "redacted_thinking":
+                    elif (
+                        block.type == Type.redacted_thinking
+                        or block.type == "redacted_thinking"
+                    ):
                         # Redacted thinking is output-only for some models
                         anthropic_content.append(
                             {
@@ -526,7 +581,7 @@ class AnthropicAdapter(BaseAdapter):
 
         return result
 
-    def _merge_consecutive_messages(self, messages: List[Message]) -> List[Message]:
+    def _merge_consecutive_messages(self, messages: list[Message]) -> list[Message]:
         """Merge consecutive messages with same role"""
         if not messages:
             return []
@@ -564,7 +619,9 @@ class AnthropicAdapter(BaseAdapter):
                 texts.append(block.get("text", ""))
         return "\n".join(texts) if texts else ""
 
-    def _extract_tool_calls_from_content(self, content: list[ContentBlock]) -> list[ToolCall] |  None:
+    def _extract_tool_calls_from_content(
+        self, content: list[ContentBlock]
+    ) -> list[ToolCall] | None:
         """Extract tool_calls from content blocks"""
         tool_calls = []
         for block in content:
@@ -635,7 +692,9 @@ class AnthropicAdapter(BaseAdapter):
             finish_reason=unified_finish_reason,
         )
 
-    def _response_message_to_anthropic_content(self, message: ResponseMessage) -> list[dict[str, Any]]:
+    def _response_message_to_anthropic_content(
+        self, message: ResponseMessage
+    ) -> list[dict[str, Any]]:
         """Convert response message to Anthropic content blocks"""
         content = []
 
@@ -652,25 +711,48 @@ class AnthropicAdapter(BaseAdapter):
                             content.append({"type": "text", "text": block.text})
                     elif block.type == Type.tool_result or block.type == "tool_result":
                         tool_result = block.tool_result or {}
-                        tool_name = tool_result.tool_name if hasattr(tool_result, 'tool_name') else tool_result.get("tool_name", "")
-                        result_data = tool_result.result if hasattr(tool_result, 'result') else tool_result.get("result", "")
-                        content.append({
-                            "type": "tool_result",
-                            "tool_use_id": tool_name,
-                            "content": result_data,
-                        })
+                        tool_name = (
+                            tool_result.tool_name
+                            if hasattr(tool_result, "tool_name")
+                            else tool_result.get("tool_name", "")
+                        )
+                        result_data = (
+                            tool_result.result
+                            if hasattr(tool_result, "result")
+                            else tool_result.get("result", "")
+                        )
+                        content.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": tool_name,
+                                "content": result_data,
+                            }
+                        )
                     elif block.type == Type.thinking or block.type == "thinking":
                         thinking = block.thinking
-                        thinking_content = thinking.content if hasattr(thinking, 'content') else thinking.get("content", "") if isinstance(thinking, dict) else ""
-                        content.append({
-                            "type": "thinking",
-                            "thinking": thinking_content,
-                        })
-                    elif block.type == Type.redacted_thinking or block.type == "redacted_thinking":
+                        thinking_content = (
+                            thinking.content
+                            if hasattr(thinking, "content")
+                            else thinking.get("content", "")
+                            if isinstance(thinking, dict)
+                            else ""
+                        )
+                        content.append(
+                            {
+                                "type": "thinking",
+                                "thinking": thinking_content,
+                            }
+                        )
+                    elif (
+                        block.type == Type.redacted_thinking
+                        or block.type == "redacted_thinking"
+                    ):
                         # Redacted thinking is output-only
-                        content.append({
-                            "type": "redacted_thinking",
-                        })
+                        content.append(
+                            {
+                                "type": "redacted_thinking",
+                            }
+                        )
 
         # Add tool_use blocks
         if message.tool_calls:
@@ -686,7 +768,9 @@ class AnthropicAdapter(BaseAdapter):
 
         return content
 
-    def _to_unified_stream_event_impl(self, data: dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
+    def _to_unified_stream_event_impl(
+        self, data: dict[str, Any], sequence_id: int, timestamp: float
+    ) -> StreamEvent:
         """Convert Anthropic stream event to unified IR format
 
         Anthropic uses different event types:
@@ -983,4 +1067,3 @@ class AnthropicAdapter(BaseAdapter):
                         return True
 
         return False
-

@@ -119,10 +119,7 @@ class BaseAdapter(ABC):
         return self._to_unified_stream_event_impl(data, sequence_id, timestamp)
 
     def _to_unified_stream_event_impl(
-        self,
-        data: dict[str, Any],
-        sequence_id: int,
-        timestamp: float
+        self, data: dict[str, Any], sequence_id: int, timestamp: float
     ) -> StreamEvent:
         """Internal implementation for stream event conversion.
 
@@ -213,8 +210,7 @@ class BaseAdapter(ABC):
             if set(obj1.keys()) != set(obj2.keys()):
                 return False
             return all(
-                self._deep_compare(obj1[k], obj2[k], f"{path}.{k}")
-                for k in obj1.keys()
+                self._deep_compare(obj1[k], obj2[k], f"{path}.{k}") for k in obj1.keys()
             )
 
         if isinstance(obj1, (list, tuple)):
@@ -229,8 +225,12 @@ class BaseAdapter(ABC):
                 if isinstance(item1, dict) and isinstance(item2, dict):
                     # Sort keys and serialize consistently
                     sorted_keys = sorted(set(item1.keys()) | set(item2.keys()))
-                    serialized1 = json.dumps({k: item1.get(k) for k in sorted_keys}, sort_keys=True)
-                    serialized2 = json.dumps({k: item2.get(k) for k in sorted_keys}, sort_keys=True)
+                    serialized1 = json.dumps(
+                        {k: item1.get(k) for k in sorted_keys}, sort_keys=True
+                    )
+                    serialized2 = json.dumps(
+                        {k: item2.get(k) for k in sorted_keys}, sort_keys=True
+                    )
                     obj1_serialized.append(serialized1)
                     obj2_serialized.append(serialized2)
                 else:

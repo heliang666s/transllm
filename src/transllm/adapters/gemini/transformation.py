@@ -35,9 +35,7 @@ class GeminiRequestTransformer:
         contents = self._transform_messages(request.get("messages", []))
 
         # Build base request
-        gemini_request: Dict[str, Any] = {
-            "contents": contents
-        }
+        gemini_request: Dict[str, Any] = {"contents": contents}
 
         # Add system instruction if present
         if system_instruction:
@@ -93,7 +91,9 @@ class GeminiRequestTransformer:
 
         return None
 
-    def _transform_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _transform_messages(
+        self, messages: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Transform OpenAI messages to Gemini contents
 
         Args:
@@ -118,10 +118,7 @@ class GeminiRequestTransformer:
             # Map role
             gemini_role = self._map_role(role)
             if gemini_role:
-                contents.append({
-                    "role": gemini_role,
-                    "parts": parts
-                })
+                contents.append({"role": gemini_role, "parts": parts})
 
         # Merge duplicate messages with same role
         contents = merge_duplicate_messages(contents)
@@ -129,9 +126,7 @@ class GeminiRequestTransformer:
         return contents
 
     def _transform_content_to_parts(
-        self,
-        content: Union[str, List[Dict[str, Any]]],
-        msg: Dict[str, Any]
+        self, content: Union[str, List[Dict[str, Any]]], msg: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Transform message content to Gemini parts format
 
@@ -161,14 +156,19 @@ class GeminiRequestTransformer:
 
                 elif part_type == "image_url":
                     image_url = item.get("image_url", {})
-                    url = image_url.get("url", "") if isinstance(image_url, dict) else image_url
+                    url = (
+                        image_url.get("url", "")
+                        if isinstance(image_url, dict)
+                        else image_url
+                    )
 
                     if url:
-                        detail = image_url.get("detail") if isinstance(image_url, dict) else None
-                        gemini_part = convert_image_url_to_gemini(
-                            url,
-                            detail=detail
+                        detail = (
+                            image_url.get("detail")
+                            if isinstance(image_url, dict)
+                            else None
                         )
+                        gemini_part = convert_image_url_to_gemini(url, detail=detail)
                         parts.append(gemini_part)
 
                 elif part_type == "tool_result":
@@ -196,12 +196,9 @@ class GeminiRequestTransformer:
                     except (json.JSONDecodeError, TypeError):
                         args_dict = {}
 
-                    parts.append({
-                        "function_call": {
-                            "name": function_name,
-                            "args": args_dict
-                        }
-                    })
+                    parts.append(
+                        {"function_call": {"name": function_name, "args": args_dict}}
+                    )
 
         return parts
 
@@ -221,10 +218,7 @@ class GeminiRequestTransformer:
 
         # Extract function call info if available
         function_name = item.get("function_name") or item.get("tool_name")
-        function_response = {
-            "name": function_name or "unknown",
-            "response": content
-        }
+        function_response = {"name": function_name or "unknown", "response": content}
 
         if tool_call_id:
             function_response["id"] = tool_call_id
@@ -318,17 +312,23 @@ class GeminiRequestTransformer:
                 else:
                     gemini_parameters = {}
 
-                gemini_tools.append({
-                    "function_declarations": [{
-                        "name": function["name"],
-                        "description": function.get("description", ""),
-                        "parameters": gemini_parameters
-                    }]
-                })
+                gemini_tools.append(
+                    {
+                        "function_declarations": [
+                            {
+                                "name": function["name"],
+                                "description": function.get("description", ""),
+                                "parameters": gemini_parameters,
+                            }
+                        ]
+                    }
+                )
 
         return gemini_tools
 
-    def _transform_tool_config(self, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _transform_tool_config(
+        self, request: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Transform tool configuration
 
         Args:
@@ -353,13 +353,15 @@ class GeminiRequestTransformer:
                 return {
                     "function_calling_config": {
                         "mode": "SPECIFIC",
-                        "allowed_function_names": [function_name]
+                        "allowed_function_names": [function_name],
                     }
                 }
 
         return None
 
-    def _transform_safety_settings(self, request: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _transform_safety_settings(
+        self, request: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Transform safety settings
 
         Args:
@@ -372,7 +374,9 @@ class GeminiRequestTransformer:
         # In practice, this would map OpenAI's safety settings to Gemini's
         return []
 
-    def _transform_thinking_config(self, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _transform_thinking_config(
+        self, request: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Transform thinking configuration for Gemini 2.x/3.x
 
         Args:
@@ -392,19 +396,10 @@ class GeminiRequestTransformer:
 
         if effort_lower == "low":
             # Google AI Studio uses thinkingBudget + includeThoughts
-            return {
-                "thinkingBudget": 8000,
-                "includeThoughts": True
-            }
+            return {"thinkingBudget": 8000, "includeThoughts": True}
         elif effort_lower == "medium":
-            return {
-                "thinkingBudget": 16000,
-                "includeThoughts": True
-            }
+            return {"thinkingBudget": 16000, "includeThoughts": True}
         elif effort_lower == "high":
-            return {
-                "thinkingBudget": 32000,
-                "includeThoughts": True
-            }
+            return {"thinkingBudget": 32000, "includeThoughts": True}
 
         return None

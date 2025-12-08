@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-import re
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional
 
 from .utils import (
     decode_thought_signature,
@@ -43,20 +42,19 @@ class GeminiResponseHandler:
         # Extract usage statistics
         usage = self._extract_usage(response, candidate)
 
-        # Extract tool calls
-        tool_calls = self._extract_tool_calls(parts)
-
         # Build response
         result = {
             "id": response.get("id", f"gemini-{hash(str(response))}"),
             "object": "chat.completion",
             "created": response.get("createTime", 0),
             "model": response.get("model", "unknown"),
-            "choices": [{
-                "index": 0,
-                "message": message,
-                "finish_reason": candidate.get("finishReason", "stop"),
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "message": message,
+                    "finish_reason": candidate.get("finishReason", "stop"),
+                }
+            ],
             "usage": usage,
         }
 
@@ -80,11 +78,13 @@ class GeminiResponseHandler:
             "object": "chat.completion",
             "created": response.get("createTime", 0),
             "model": response.get("model", "unknown"),
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "content": ""},
-                "finish_reason": "stop",
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": ""},
+                    "finish_reason": "stop",
+                }
+            ],
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
@@ -92,7 +92,9 @@ class GeminiResponseHandler:
             },
         }
 
-    def _extract_message_from_parts(self, parts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _extract_message_from_parts(
+        self, parts: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Extract OpenAI message from Gemini parts
 
         Args:
@@ -106,21 +108,20 @@ class GeminiResponseHandler:
 
         for part in parts:
             if "text" in part:
-                content_parts.append({
-                    "type": "text",
-                    "text": part["text"]
-                })
+                content_parts.append({"type": "text", "text": part["text"]})
 
             elif "function_call" in part:
                 func_call = part["function_call"]
-                tool_calls.append({
-                    "id": generate_tool_call_id(),
-                    "type": "function",
-                    "function": {
-                        "name": func_call["name"],
-                        "arguments": func_call.get("args", {})
+                tool_calls.append(
+                    {
+                        "id": generate_tool_call_id(),
+                        "type": "function",
+                        "function": {
+                            "name": func_call["name"],
+                            "arguments": func_call.get("args", {}),
+                        },
                     }
-                })
+                )
 
             elif "thinking" in part:
                 # Handle thinking blocks
@@ -136,16 +137,22 @@ class GeminiResponseHandler:
                         pass
 
                 # Add thinking as part of content (for transparency)
-                content_parts.append({
-                    "type": "text",
-                    "text": f"<thinking>{thinking_content}</thinking>",
-                    "thinking": True
-                })
+                content_parts.append(
+                    {
+                        "type": "text",
+                        "text": f"<thinking>{thinking_content}</thinking>",
+                        "thinking": True,
+                    }
+                )
 
         # Build message
         message: Dict[str, Any] = {"role": "assistant"}
 
-        if content_parts and len(content_parts) == 1 and content_parts[0]["type"] == "text":
+        if (
+            content_parts
+            and len(content_parts) == 1
+            and content_parts[0]["type"] == "text"
+        ):
             # Simple text-only message
             message["content"] = content_parts[0]["text"]
         elif content_parts:
@@ -171,21 +178,21 @@ class GeminiResponseHandler:
         for part in parts:
             if "function_call" in part:
                 func_call = part["function_call"]
-                tool_calls.append({
-                    "id": generate_tool_call_id(),
-                    "type": "function",
-                    "function": {
-                        "name": func_call["name"],
-                        "arguments": json.dumps(func_call.get("args", {}))
+                tool_calls.append(
+                    {
+                        "id": generate_tool_call_id(),
+                        "type": "function",
+                        "function": {
+                            "name": func_call["name"],
+                            "arguments": json.dumps(func_call.get("args", {})),
+                        },
                     }
-                })
+                )
 
         return tool_calls
 
     def _extract_usage(
-        self,
-        response: Dict[str, Any],
-        candidate: Optional[Dict[str, Any]] = None
+        self, response: Dict[str, Any], candidate: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Extract usage statistics from Gemini response
 
@@ -208,9 +215,7 @@ class GeminiResponseHandler:
 
         # Detect if candidate tokens are inclusive
         inclusive = is_candidate_token_count_inclusive(
-            prompt_tokens,
-            candidates_tokens,
-            total_tokens
+            prompt_tokens, candidates_tokens, total_tokens
         )
 
         if inclusive:
@@ -235,8 +240,7 @@ class GeminiResponseHandler:
         }
 
     def transform_streaming_response(
-        self,
-        stream: Generator[Dict[str, Any], None, None]
+        self, stream: Generator[Dict[str, Any], None, None]
     ) -> Generator[Dict[str, Any], None, None]:
         """Transform Gemini streaming response to OpenAI format
 
@@ -247,7 +251,12 @@ class GeminiResponseHandler:
             OpenAI-style streaming chunks
         """
         for chunk in stream:
-            chunk_type = chunk.get("chunk", {}).get("content", {}).get("parts", [{}])[0].get("type", "text")
+            chunk_type = (
+                chunk.get("chunk", {})
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("type", "text")
+            )
 
             if chunk_type == "thinking":
                 # Handle thinking chunks
@@ -280,13 +289,15 @@ class GeminiResponseHandler:
             "object": "chat.completion.chunk",
             "created": chunk.get("createTime", 0),
             "model": chunk.get("model", "unknown"),
-            "choices": [{
-                "index": 0,
-                "delta": {
-                    "content": delta_text if delta_text else None,
-                },
-                "finish_reason": None,
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "content": delta_text if delta_text else None,
+                    },
+                    "finish_reason": None,
+                }
+            ],
         }
 
     def _transform_thinking_chunk(self, chunk: Dict[str, Any]) -> Dict[str, Any]:
@@ -313,26 +324,26 @@ class GeminiResponseHandler:
             "object": "chat.completion.chunk",
             "created": chunk.get("createTime", 0),
             "model": chunk.get("model", "unknown"),
-            "choices": [{
-                "index": 0,
-                "delta": {},
-                "finish_reason": None,
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": None,
+                }
+            ],
         }
 
         # Add reasoning content if available
         if thinking_content:
-            chunk_data["choices"][0]["delta"]["content"] = f"<thinking>{thinking_content}</thinking>"
+            chunk_data["choices"][0]["delta"]["content"] = (
+                f"<thinking>{thinking_content}</thinking>"
+            )
             chunk_data["choices"][0]["delta"]["reasoning_content"] = thinking_content
 
         return chunk_data
 
     def transform_function_response(
-        self,
-        tool_call_id: str,
-        function_name: str,
-        result: Any,
-        is_error: bool = False
+        self, tool_call_id: str, function_name: str, result: Any, is_error: bool = False
     ) -> Dict[str, Any]:
         """Transform function/tool response to Gemini format
 
@@ -347,16 +358,20 @@ class GeminiResponseHandler:
         """
         return {
             "role": "tool",
-            "parts": [{
-                "function_response": {
-                    "name": function_name,
-                    "response": str(result),
-                    "id": tool_call_id if is_error else None
+            "parts": [
+                {
+                    "function_response": {
+                        "name": function_name,
+                        "response": str(result),
+                        "id": tool_call_id if is_error else None,
+                    }
                 }
-            }]
+            ],
         }
 
-    def extract_grounding_metadata(self, response: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def extract_grounding_metadata(
+        self, response: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Extract grounding/web search metadata from Gemini response
 
         Args:
@@ -376,18 +391,17 @@ class GeminiResponseHandler:
         # Process grounding chunks
         for chunk in grounding_metadata.get("groundingChunks", []):
             if "webSearchEntity" in chunk:
-                annotations.append({
-                    "type": "grounding",
-                    "text": chunk["webSearchEntity"].get("name", ""),
-                    "start_index": 0,
-                    "end_index": 0,
-                })
+                annotations.append(
+                    {
+                        "type": "grounding",
+                        "text": chunk["webSearchEntity"].get("name", ""),
+                        "start_index": 0,
+                        "end_index": 0,
+                    }
+                )
 
         if annotations:
-            return {
-                "type": "annotations",
-                "annotations": annotations
-            }
+            return {"type": "annotations", "annotations": annotations}
 
         return None
 
@@ -463,18 +477,22 @@ class ModelResponseIterator:
             "object": "chat.completion.chunk",
             "created": chunk.get("createTime", 0),
             "model": chunk.get("model", "unknown"),
-            "choices": [{
-                "index": 0,
-                "delta": delta,
-                "finish_reason": None if not finish_reason else finish_reason,
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": delta,
+                    "finish_reason": None if not finish_reason else finish_reason,
+                }
+            ],
         }
 
         # Add usage if available
         if "usageMetadata" in chunk:
             result["usage"] = {
                 "prompt_tokens": chunk["usageMetadata"].get("promptTokenCount", 0),
-                "completion_tokens": chunk["usageMetadata"].get("candidatesTokenCount", 0),
+                "completion_tokens": chunk["usageMetadata"].get(
+                    "candidatesTokenCount", 0
+                ),
                 "total_tokens": chunk["usageMetadata"].get("totalTokenCount", 0),
             }
 

@@ -44,7 +44,10 @@ class TestAnthropicRequestIdempotency:
         assert result["max_tokens"] == original["max_tokens"]
         assert len(result["messages"]) == len(original["messages"])
         assert result["messages"][0]["role"] == original["messages"][0]["role"]
-        assert result["messages"][0]["content"][0]["text"] == original["messages"][0]["content"]
+        assert (
+            result["messages"][0]["content"][0]["text"]
+            == original["messages"][0]["content"]
+        )
 
     def test_system_message_idempotency(self):
         """Test that system messages are preserved"""
@@ -136,7 +139,9 @@ class TestAnthropicResponseIdempotency:
 
         if "usage" in original:
             assert result["usage"]["input_tokens"] == original["usage"]["input_tokens"]
-            assert result["usage"]["output_tokens"] == original["usage"]["output_tokens"]
+            assert (
+                result["usage"]["output_tokens"] == original["usage"]["output_tokens"]
+            )
 
     def test_cached_response_idempotency(self):
         """Test that cached token information is preserved"""
@@ -147,7 +152,10 @@ class TestAnthropicResponseIdempotency:
 
         assert result["model"] == original["model"]
         if "cache_read_input_tokens" in original["usage"]:
-            assert result["usage"]["cache_read_input_tokens"] == original["usage"]["cache_read_input_tokens"]
+            assert (
+                result["usage"]["cache_read_input_tokens"]
+                == original["usage"]["cache_read_input_tokens"]
+            )
 
     def test_multi_tool_response_idempotency(self):
         """Test that responses with multiple tool calls are preserved"""
@@ -169,7 +177,10 @@ class TestAnthropicResponseIdempotency:
 
         assert result["model"] == original["model"]
         # Check cache_creation_input_tokens preservation
-        assert result["usage"]["cache_creation_input_tokens"] == original["usage"]["cache_creation_input_tokens"]
+        assert (
+            result["usage"]["cache_creation_input_tokens"]
+            == original["usage"]["cache_creation_input_tokens"]
+        )
         assert result["usage"]["input_tokens"] == original["usage"]["input_tokens"]
         assert result["usage"]["output_tokens"] == original["usage"]["output_tokens"]
 
@@ -182,7 +193,10 @@ class TestAnthropicResponseIdempotency:
 
         assert result["model"] == original["model"]
         # Check cache_read_input_tokens preservation
-        assert result["usage"]["cache_read_input_tokens"] == original["usage"]["cache_read_input_tokens"]
+        assert (
+            result["usage"]["cache_read_input_tokens"]
+            == original["usage"]["cache_read_input_tokens"]
+        )
         assert result["usage"]["input_tokens"] == original["usage"]["input_tokens"]
         assert result["usage"]["output_tokens"] == original["usage"]["output_tokens"]
 
@@ -290,7 +304,10 @@ class TestAnthropicEdgeCases:
             "messages": [
                 {"role": "user", "content": "First message"},
                 {"role": "user", "content": "Second message"},
-                {"role": "assistant", "content": [{"type": "text", "text": "Response"}]},
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Response"}],
+                },
             ],
             "max_tokens": 100,
         }

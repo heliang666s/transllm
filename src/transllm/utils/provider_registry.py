@@ -15,7 +15,9 @@ class ProviderRegistry:
     _adapters: dict[str, Type[BaseAdapter]] = {}
 
     @classmethod
-    def register(cls, provider_name: Provider, adapter_class: Type[BaseAdapter]) -> None:
+    def register(
+        cls, provider_name: Provider, adapter_class: Type[BaseAdapter]
+    ) -> None:
         """Register a provider adapter class
 
         Args:

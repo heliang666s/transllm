@@ -101,12 +101,12 @@ class RequestConverter:
     def _deep_compare(obj1: Any, obj2: Any, path: str = "") -> bool:
         """Deep comparison of two objects with enum handling"""
         # Handle enum comparison
-        if hasattr(obj1, 'value') and hasattr(obj2, 'value'):
+        if hasattr(obj1, "value") and hasattr(obj2, "value"):
             return obj1.value == obj2.value
-        if hasattr(obj1, 'value') or hasattr(obj2, 'value'):
+        if hasattr(obj1, "value") or hasattr(obj2, "value"):
             # One is enum, one is not - compare enum value with the other
-            val1 = obj1.value if hasattr(obj1, 'value') else obj1
-            val2 = obj2.value if hasattr(obj2, 'value') else obj2
+            val1 = obj1.value if hasattr(obj1, "value") else obj1
+            val2 = obj2.value if hasattr(obj2, "value") else obj2
             return val1 == val2
 
         if type(obj1) != type(obj2):

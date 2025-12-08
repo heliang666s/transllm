@@ -129,19 +129,25 @@ class OpenAIAdapter(BaseAdapter):
 
         # Check if there's already a system message in the messages array
         has_system_message = any(
-            msg.role.value == "system" if hasattr(msg.role, 'value') else msg.role == "system"
+            msg.role.value == "system"
+            if hasattr(msg.role, "value")
+            else msg.role == "system"
             for msg in unified_request.messages
         )
 
         # Add system instruction as a system message only if not already present
         if unified_request.system_instruction and not has_system_message:
-            messages.append({
-                "role": "system",
-                "content": unified_request.system_instruction,
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": unified_request.system_instruction,
+                }
+            )
 
         # Convert all messages (including system messages if present)
-        messages.extend([self.from_unified_message(msg) for msg in unified_request.messages])
+        messages.extend(
+            [self.from_unified_message(msg) for msg in unified_request.messages]
+        )
 
         tools = None
         if unified_request.tools:
@@ -243,6 +249,7 @@ class OpenAIAdapter(BaseAdapter):
             grounding_attributions = []
             for attr in data["grounding_attributions"]:
                 from ...core.schema import GroundingAttribution
+
                 grounding_attributions.append(
                     GroundingAttribution(
                         content_index=attr.get("content_index"),
@@ -275,7 +282,11 @@ class OpenAIAdapter(BaseAdapter):
             }
             if choice.finish_reason:
                 # Convert enum to string
-                finish_reason_str = choice.finish_reason.value if hasattr(choice.finish_reason, 'value') else str(choice.finish_reason)
+                finish_reason_str = (
+                    choice.finish_reason.value
+                    if hasattr(choice.finish_reason, "value")
+                    else str(choice.finish_reason)
+                )
                 choice_data["finish_reason"] = finish_reason_str
             if choice.logprobs:
                 choice_data["logprobs"] = choice.logprobs
@@ -294,7 +305,9 @@ class OpenAIAdapter(BaseAdapter):
             if unified_response.usage.prompt_tokens is not None:
                 usage_dict["prompt_tokens"] = unified_response.usage.prompt_tokens
             if unified_response.usage.completion_tokens is not None:
-                usage_dict["completion_tokens"] = unified_response.usage.completion_tokens
+                usage_dict["completion_tokens"] = (
+                    unified_response.usage.completion_tokens
+                )
             usage_dict["total_tokens"] = unified_response.usage.total_tokens
             if unified_response.usage.input_tokens is not None:
                 usage_dict["input_tokens"] = unified_response.usage.input_tokens
@@ -333,7 +346,9 @@ class OpenAIAdapter(BaseAdapter):
             logprobs=choice_data.get("logprobs"),
         )
 
-    def _convert_response_message(self, message_data: dict[str, Any]) -> ResponseMessage:
+    def _convert_response_message(
+        self, message_data: dict[str, Any]
+    ) -> ResponseMessage:
         """Convert OpenAI message to unified IR"""
         content = message_data.get("content", "")
 
@@ -348,6 +363,7 @@ class OpenAIAdapter(BaseAdapter):
                     # Try to parse JSON string to dict
                     try:
                         import json
+
                         arguments = json.loads(arguments)
                     except (json.JSONDecodeError, TypeError):
                         # Keep as string if parsing fails
@@ -382,41 +398,51 @@ class OpenAIAdapter(BaseAdapter):
                     content_type = content_item.get("type")
                     if content_type == "text":
                         content_blocks.append(
-                            ContentBlock(
-                                type="text",
-                                text=content_item.get("text", "")
-                            )
+                            ContentBlock(type="text", text=content_item.get("text", ""))
                         )
                     elif content_type == "image_url":
                         from ...core.schema import ImageUrl
+
                         content_blocks.append(
                             ContentBlock(
                                 type="image_url",
                                 image_url=ImageUrl(
-                                    url=content_item.get("image_url", {}).get("url", ""),
-                                    detail=content_item.get("image_url", {}).get("detail")
-                                )
+                                    url=content_item.get("image_url", {}).get(
+                                        "url", ""
+                                    ),
+                                    detail=content_item.get("image_url", {}).get(
+                                        "detail"
+                                    ),
+                                ),
                             )
                         )
                     elif content_type == "tool_result":
                         from ...core.schema import ToolResult
+
                         content_blocks.append(
                             ContentBlock(
                                 type="tool_result",
                                 tool_result=ToolResult(
-                                    tool_name=content_item.get("tool_result", {}).get("tool_name", ""),
-                                    result=content_item.get("tool_result", {}).get("result", "")
-                                )
+                                    tool_name=content_item.get("tool_result", {}).get(
+                                        "tool_name", ""
+                                    ),
+                                    result=content_item.get("tool_result", {}).get(
+                                        "result", ""
+                                    ),
+                                ),
                             )
                         )
                     elif content_type == "reasoning":
                         from ...core.schema import Reasoning
+
                         content_blocks.append(
                             ContentBlock(
                                 type="reasoning",
                                 reasoning=Reasoning(
-                                    content=content_item.get("reasoning", {}).get("content", "")
-                                )
+                                    content=content_item.get("reasoning", {}).get(
+                                        "content", ""
+                                    )
+                                ),
                             )
                         )
             content = content_blocks
@@ -424,6 +450,7 @@ class OpenAIAdapter(BaseAdapter):
         tool_calls = None
         if "tool_calls" in message_data and message_data["tool_calls"]:
             import json
+
             tool_calls = []
             for tc in message_data["tool_calls"]:
                 # OpenAI tool_calls have arguments as a JSON string that needs to be parsed
@@ -471,10 +498,16 @@ class OpenAIAdapter(BaseAdapter):
                 return "".join(text_parts)
         return None
 
-    def _response_message_to_dict(self, response_message: ResponseMessage) -> dict[str, Any]:
+    def _response_message_to_dict(
+        self, response_message: ResponseMessage
+    ) -> dict[str, Any]:
         """Convert ResponseMessage Pydantic model to dict"""
         # Convert enum to string
-        role_str = response_message.role.value if hasattr(response_message.role, 'value') else str(response_message.role)
+        role_str = (
+            response_message.role.value
+            if hasattr(response_message.role, "value")
+            else str(response_message.role)
+        )
 
         # Handle content (could be string or list of ContentBlock)
         content = response_message.content
@@ -490,7 +523,11 @@ class OpenAIAdapter(BaseAdapter):
                     cb_dict["type"] = "image_url"
                     cb_dict["image_url"] = {
                         "url": cb.image_url.url,
-                        "detail": cb.image_url.detail.value if hasattr(cb.image_url.detail, 'value') else str(cb.image_url.detail) if cb.image_url.detail else None,
+                        "detail": cb.image_url.detail.value
+                        if hasattr(cb.image_url.detail, "value")
+                        else str(cb.image_url.detail)
+                        if cb.image_url.detail
+                        else None,
                     }
                 elif cb.tool_result is not None:
                     cb_dict["type"] = "tool_result"
@@ -522,7 +559,9 @@ class OpenAIAdapter(BaseAdapter):
                     "type": "function",
                     "function": {
                         "name": tc.name,
-                        "arguments": json.dumps(tc.arguments) if isinstance(tc.arguments, dict) else tc.arguments,
+                        "arguments": json.dumps(tc.arguments)
+                        if isinstance(tc.arguments, dict)
+                        else tc.arguments,
                     },
                 }
                 for tc in response_message.tool_calls
@@ -546,7 +585,11 @@ class OpenAIAdapter(BaseAdapter):
     def from_unified_message(self, unified_message: Message) -> dict[str, Any]:
         """Convert unified IR message to OpenAI format"""
         # Convert enum to string
-        role_str = unified_message.role.value if hasattr(unified_message.role, 'value') else str(unified_message.role)
+        role_str = (
+            unified_message.role.value
+            if hasattr(unified_message.role, "value")
+            else str(unified_message.role)
+        )
 
         # Handle content (could be string or list of ContentBlock)
         content = unified_message.content
@@ -562,7 +605,11 @@ class OpenAIAdapter(BaseAdapter):
                     cb_dict["type"] = "image_url"
                     cb_dict["image_url"] = {
                         "url": cb.image_url.url,
-                        "detail": cb.image_url.detail.value if hasattr(cb.image_url.detail, 'value') else str(cb.image_url.detail) if cb.image_url.detail else None,
+                        "detail": cb.image_url.detail.value
+                        if hasattr(cb.image_url.detail, "value")
+                        else str(cb.image_url.detail)
+                        if cb.image_url.detail
+                        else None,
                     }
                 elif cb.tool_result is not None:
                     cb_dict["type"] = "tool_result"
@@ -594,7 +641,9 @@ class OpenAIAdapter(BaseAdapter):
                     "type": "function",
                     "function": {
                         "name": tc.name,
-                        "arguments": json.dumps(tc.arguments) if isinstance(tc.arguments, dict) else tc.arguments,
+                        "arguments": json.dumps(tc.arguments)
+                        if isinstance(tc.arguments, dict)
+                        else tc.arguments,
                     },
                 }
                 for tc in unified_message.tool_calls
@@ -605,7 +654,9 @@ class OpenAIAdapter(BaseAdapter):
 
         return result
 
-    def _to_unified_stream_event_impl(self, data: dict[str, Any], sequence_id: int, timestamp: float) -> StreamEvent:
+    def _to_unified_stream_event_impl(
+        self, data: dict[str, Any], sequence_id: int, timestamp: float
+    ) -> StreamEvent:
         """Convert OpenAI stream event to unified IR"""
         # OpenAI uses delta chunks in choices
         choice = data.get("choices", [{}])[0]
@@ -623,7 +674,9 @@ class OpenAIAdapter(BaseAdapter):
         elif "tool_calls" in delta and delta["tool_calls"]:
             # Tool call event
             tc = delta["tool_calls"][0]
-            if tc.get("function", {}).get("name") or tc.get("function", {}).get("arguments"):
+            if tc.get("function", {}).get("name") or tc.get("function", {}).get(
+                "arguments"
+            ):
                 event_type = "tool_call_delta"
 
         # Handle tool calls in streaming
@@ -653,7 +706,10 @@ class OpenAIAdapter(BaseAdapter):
         delta = {}
 
         # Only add content_delta if it's not None and not empty string
-        if unified_event.content_delta is not None and unified_event.content_delta != "":
+        if (
+            unified_event.content_delta is not None
+            and unified_event.content_delta != ""
+        ):
             delta["content"] = unified_event.content_delta
 
         if unified_event.tool_call_delta:

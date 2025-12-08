@@ -11,276 +11,276 @@ from pydantic import BaseModel, ConfigDict, Field, confloat, conint
 
 
 class ContentBlockType(Enum):
-    text = 'text'
-    image_url = 'image_url'
-    tool_result = 'tool_result'
-    reasoning = 'reasoning'
-    thinking = 'thinking'
-    redacted_thinking = 'redacted_thinking'
+    text = "text"
+    image_url = "image_url"
+    tool_result = "tool_result"
+    reasoning = "reasoning"
+    thinking = "thinking"
+    redacted_thinking = "redacted_thinking"
 
 
 class ImageDetailLevel(Enum):
-    high = 'high'
-    low = 'low'
-    auto = 'auto'
+    high = "high"
+    low = "low"
+    auto = "auto"
 
 
 class RoleType(Enum):
-    system = 'system'
-    user = 'user'
-    assistant = 'assistant'
-    tool = 'tool'
+    system = "system"
+    user = "user"
+    assistant = "assistant"
+    tool = "tool"
 
 
 class ResponseRoleType(Enum):
-    assistant = 'assistant'
-    tool = 'tool'
+    assistant = "assistant"
+    tool = "tool"
 
 
 class Type(Enum):
-    text = 'text'
-    image_url = 'image_url'
-    tool_result = 'tool_result'
-    reasoning = 'reasoning'
-    thinking = 'thinking'
-    redacted_thinking = 'redacted_thinking'
+    text = "text"
+    image_url = "image_url"
+    tool_result = "tool_result"
+    reasoning = "reasoning"
+    thinking = "thinking"
+    redacted_thinking = "redacted_thinking"
 
 
 class Detail(Enum):
-    high = 'high'
-    low = 'low'
-    auto = 'auto'
+    high = "high"
+    low = "low"
+    auto = "auto"
 
 
 class ImageUrl(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    url: str | None = Field(None, description='Image URL or base64 data')
-    detail: Detail | None = Field(None, description='Image processing detail level')
+    url: str | None = Field(None, description="Image URL or base64 data")
+    detail: Detail | None = Field(None, description="Image processing detail level")
 
 
 class ToolResult(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    tool_name: str | None = Field(None, description='Tool name')
+    tool_name: str | None = Field(None, description="Tool name")
     result: dict[str, Any] | None = Field(
-        None, description='Tool execution result data'
+        None, description="Tool execution result data"
     )
 
 
 class Reasoning(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    content: str | None = Field(None, description='Reasoning text')
+    content: str | None = Field(None, description="Reasoning text")
 
 
 class Thinking(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    content: str | None = Field(None, description='Thinking text')
+    content: str | None = Field(None, description="Thinking text")
 
 
 class RedactedThinking(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    content: str | None = Field(None, description='Redacted thinking text')
+    content: str | None = Field(None, description="Redacted thinking text")
 
 
 class ContentBlock(BaseModel):
-    type: Type = Field(..., description='Content block type')
-    text: str | None = Field(None, description='Text content')
-    image_url: ImageUrl | None = Field(None, description='Image content')
-    tool_result: ToolResult | None = Field(None, description='Tool execution result')
+    type: Type = Field(..., description="Content block type")
+    text: str | None = Field(None, description="Text content")
+    image_url: ImageUrl | None = Field(None, description="Image content")
+    tool_result: ToolResult | None = Field(None, description="Tool execution result")
     reasoning: Reasoning | None = Field(
-        None, description='Reasoning content (thinking mode)'
+        None, description="Reasoning content (thinking mode)"
     )
     thinking: Thinking | None = Field(
-        None, description='Thinking content (Anthropic extended thinking)'
+        None, description="Thinking content (Anthropic extended thinking)"
     )
     redacted_thinking: RedactedThinking | None = Field(
-        None, description='Redacted thinking content (Anthropic extended thinking)'
+        None, description="Redacted thinking content (Anthropic extended thinking)"
     )
     cache_control: dict[str, Any] | None = Field(
-        None, description='Cache control metadata for prompt caching (Anthropic)'
+        None, description="Cache control metadata for prompt caching (Anthropic)"
     )
 
 
 class Role(Enum):
-    system = 'system'
-    user = 'user'
-    assistant = 'assistant'
-    tool = 'tool'
+    system = "system"
+    user = "user"
+    assistant = "assistant"
+    tool = "tool"
 
 
 class ToolDefinition(BaseModel):
-    name: str = Field(..., description='Tool name')
-    description: str = Field(..., description='Tool functionality description')
+    name: str = Field(..., description="Tool name")
+    description: str = Field(..., description="Tool functionality description")
     parameters: dict[str, Any] | None = Field(
-        None, description='JSON Schema format tool parameter definition'
+        None, description="JSON Schema format tool parameter definition"
     )
-    metadata: dict[str, Any] | None = Field(None, description='Tool metadata')
+    metadata: dict[str, Any] | None = Field(None, description="Tool metadata")
     cache_control: dict[str, Any] | None = Field(
-        None, description='Cache control metadata for tool definitions (Anthropic)'
+        None, description="Cache control metadata for tool definitions (Anthropic)"
     )
 
 
 class ToolCall(BaseModel):
-    identifier: str | None = Field(None, description='Tool call unique identifier')
-    name: str = Field(..., description='Called tool name')
-    arguments: dict[str, Any] = Field(..., description='Tool call arguments')
+    identifier: str | None = Field(None, description="Tool call unique identifier")
+    name: str = Field(..., description="Called tool name")
+    arguments: dict[str, Any] = Field(..., description="Tool call arguments")
 
 
 class GenerationParameters(BaseModel):
     temperature: confloat(ge=0.0, le=2.0) | None = Field(
-        None, description='Controls output randomness'
+        None, description="Controls output randomness"
     )
     max_tokens: conint(ge=1) | None = Field(
-        None, description='Maximum number of tokens to generate'
+        None, description="Maximum number of tokens to generate"
     )
     max_completion_tokens: conint(ge=1) | None = Field(
-        None, description='Maximum tokens for completion (newer API version)'
+        None, description="Maximum tokens for completion (newer API version)"
     )
     top_p: confloat(ge=0.0, le=1.0) | None = Field(
-        None, description='Nucleus sampling parameter'
+        None, description="Nucleus sampling parameter"
     )
-    top_k: conint(ge=0) | None = Field(None, description='Top-K sampling parameter')
-    stop_sequences: list[str] | None = Field(None, description='Stop sequences')
-    stream: bool | None = Field(None, description='Enable streaming output')
-    seed: int | None = Field(None, description='Random seed')
+    top_k: conint(ge=0) | None = Field(None, description="Top-K sampling parameter")
+    stop_sequences: list[str] | None = Field(None, description="Stop sequences")
+    stream: bool | None = Field(None, description="Enable streaming output")
+    seed: int | None = Field(None, description="Random seed")
     presence_penalty: float | None = Field(
-        None, description='Presence penalty coefficient'
+        None, description="Presence penalty coefficient"
     )
     frequency_penalty: float | None = Field(
-        None, description='Frequency penalty coefficient'
+        None, description="Frequency penalty coefficient"
     )
     logit_bias: dict[str, float] | None = Field(
         None,
-        description='Modify token probability distribution (maps token IDs to bias values)',
+        description="Modify token probability distribution (maps token IDs to bias values)",
     )
     response_format: dict[str, Any] | None = Field(
-        None, description='Response format specification (e.g., JSON mode, schema)'
+        None, description="Response format specification (e.g., JSON mode, schema)"
     )
-    logprobs: bool | None = Field(None, description='Return token log probabilities')
+    logprobs: bool | None = Field(None, description="Return token log probabilities")
     top_logprobs: conint(ge=0) | None = Field(
-        None, description='Number of log probabilities to return'
+        None, description="Number of log probabilities to return"
     )
     n: conint(ge=1) | None = Field(
-        None, description='Number of chat completion choices to generate'
+        None, description="Number of chat completion choices to generate"
     )
     stream_options: dict[str, Any] | None = Field(
-        None, description='Streaming options (e.g., include_usage)'
+        None, description="Streaming options (e.g., include_usage)"
     )
     metadata: dict[str, Any] | None = Field(
-        None, description='Generation parameters metadata'
+        None, description="Generation parameters metadata"
     )
 
 
 class GroundingAttribution(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
-    content_index: int | None = Field(None, description='Content block index')
-    model_decision: str | None = Field(None, description='Model decision text')
+    content_index: int | None = Field(None, description="Content block index")
+    model_decision: str | None = Field(None, description="Model decision text")
     grounding_chunk_indices: list[int] | None = Field(
-        None, description='Indices of grounding chunks'
+        None, description="Indices of grounding chunks"
     )
     source_chunk_indices: list[int] | None = Field(
-        None, description='Indices of source chunks'
+        None, description="Indices of source chunks"
     )
 
 
 class ToolChoice(Enum):
-    auto = 'auto'
-    none = 'none'
-    any = 'any'
+    auto = "auto"
+    none = "none"
+    any = "any"
 
 
 class UsageStatistics(BaseModel):
-    prompt_tokens: int | None = Field(None, description='Input token count')
-    completion_tokens: int | None = Field(None, description='Output token count')
-    total_tokens: int = Field(..., description='Total token count')
-    input_tokens: int | None = Field(None, description='Input token count (alias)')
-    output_tokens: int | None = Field(None, description='Output token count (alias)')
-    cached_tokens: int | None = Field(None, description='Cached token count')
+    prompt_tokens: int | None = Field(None, description="Input token count")
+    completion_tokens: int | None = Field(None, description="Output token count")
+    total_tokens: int = Field(..., description="Total token count")
+    input_tokens: int | None = Field(None, description="Input token count (alias)")
+    output_tokens: int | None = Field(None, description="Output token count (alias)")
+    cached_tokens: int | None = Field(None, description="Cached token count")
     cache_creation_input_tokens: int | None = Field(
-        None, description='Input tokens used to create cache (Anthropic)'
+        None, description="Input tokens used to create cache (Anthropic)"
     )
     cache_read_input_tokens: int | None = Field(
-        None, description='Input tokens read from cache (Anthropic)'
+        None, description="Input tokens read from cache (Anthropic)"
     )
     reasoning_tokens: int | None = Field(
         None,
-        description='Tokens used for reasoning/thinking (extended thinking models)',
+        description="Tokens used for reasoning/thinking (extended thinking models)",
     )
 
 
 class Role1(Enum):
-    assistant = 'assistant'
-    tool = 'tool'
+    assistant = "assistant"
+    tool = "tool"
 
 
 class ResponseMessage(BaseModel):
-    role: Role1 = Field(..., description='Message sender role')
-    content: str | list[ContentBlock] = Field(..., description='Message content')
-    tool_calls: list[ToolCall] | None = Field(None, description='Tool calls list')
+    role: Role1 = Field(..., description="Message sender role")
+    content: str | list[ContentBlock] = Field(..., description="Message content")
+    tool_calls: list[ToolCall] | None = Field(None, description="Tool calls list")
     reasoning_content: str | None = Field(
-        None, description='Reasoning content from reasoning models (e.g., OpenAI o1)'
+        None, description="Reasoning content from reasoning models (e.g., OpenAI o1)"
     )
     thinking_blocks: list[dict[str, Any]] | None = Field(
-        None, description='Structured thinking blocks from reasoning models'
+        None, description="Structured thinking blocks from reasoning models"
     )
-    identifier: str | None = Field(None, description='Message unique identifier')
+    identifier: str | None = Field(None, description="Message unique identifier")
 
 
 class FinishReason(Enum):
-    stop = 'stop'
-    length = 'length'
-    content_filter = 'content_filter'
-    tool_calls = 'tool_calls'
-    safety = 'safety'
-    recitation = 'recitation'
-    other = 'other'
+    stop = "stop"
+    length = "length"
+    content_filter = "content_filter"
+    tool_calls = "tool_calls"
+    safety = "safety"
+    recitation = "recitation"
+    other = "other"
 
 
 class Choice(BaseModel):
     message: ResponseMessage
-    index: int = Field(..., description='Choice index')
-    finish_reason: FinishReason | None = Field(None, description='Completion reason')
+    index: int = Field(..., description="Choice index")
+    finish_reason: FinishReason | None = Field(None, description="Completion reason")
     logprobs: dict[str, Any] | None = Field(
-        None, description='Log probability information'
+        None, description="Log probability information"
     )
 
 
 class CoreResponse(BaseModel):
-    id: str | None = Field(None, description='Response unique identifier')
-    object: str | None = Field('core.response', description='Object type')
-    created: int | None = Field(None, description='Creation timestamp (Unix timestamp)')
-    model: str | None = Field(None, description='Used model identifier')
-    choices: list[Choice] = Field(..., description='Response choices list')
+    id: str | None = Field(None, description="Response unique identifier")
+    object: str | None = Field("core.response", description="Object type")
+    created: int | None = Field(None, description="Creation timestamp (Unix timestamp)")
+    model: str | None = Field(None, description="Used model identifier")
+    choices: list[Choice] = Field(..., description="Response choices list")
     usage: UsageStatistics | None = None
     grounding_attributions: list[GroundingAttribution] | None = Field(
-        None, description='Grounding attributions for citations'
+        None, description="Grounding attributions for citations"
     )
-    metadata: dict[str, Any] | None = Field(None, description='Response metadata')
+    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class StreamEventType(Enum):
-    content_delta = 'content_delta'
-    tool_call_delta = 'tool_call_delta'
-    content_finish = 'content_finish'
-    stream_end = 'stream_end'
-    error = 'error'
-    metadata_update = 'metadata_update'
+    content_delta = "content_delta"
+    tool_call_delta = "tool_call_delta"
+    content_finish = "content_finish"
+    stream_end = "stream_end"
+    error = "error"
+    metadata_update = "metadata_update"
 
 
 class ToolCallDelta(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
     name: str | None = None
     arguments_delta: str | None = None
@@ -289,7 +289,7 @@ class ToolCallDelta(BaseModel):
 
 class Error(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="forbid",
     )
     code: str | None = None
     message: str | None = None
@@ -299,91 +299,91 @@ class Error(BaseModel):
 class StreamEvent(BaseModel):
     type: StreamEventType
     sequence_id: int = Field(
-        ..., description='Event sequence number (ensures ordering)'
+        ..., description="Event sequence number (ensures ordering)"
     )
-    timestamp: float = Field(..., description='Event timestamp')
-    content_delta: str | None = Field(None, description='Incremental content')
+    timestamp: float = Field(..., description="Event timestamp")
+    content_delta: str | None = Field(None, description="Incremental content")
     tool_call_delta: ToolCallDelta | None = None
     tool_call: list[ToolCall] | None = Field(
-        None, description='Complete tool calls (when tool call is finished)'
+        None, description="Complete tool calls (when tool call is finished)"
     )
-    finish_reason: str | None = Field(None, description='Completion reason')
-    content_index: int | None = Field(None, description='Content block index')
-    error: Error | None = Field(None, description='Error information')
-    metadata: dict[str, Any] | None = Field(None, description='Event metadata')
+    finish_reason: str | None = Field(None, description="Completion reason")
+    content_index: int | None = Field(None, description="Content block index")
+    error: Error | None = Field(None, description="Error information")
+    metadata: dict[str, Any] | None = Field(None, description="Event metadata")
 
 
 class ErrorType(Enum):
-    validation_error = 'validation_error'
-    not_supported = 'not_supported'
-    conversion_error = 'conversion_error'
-    internal_error = 'internal_error'
+    validation_error = "validation_error"
+    not_supported = "not_supported"
+    conversion_error = "conversion_error"
+    internal_error = "internal_error"
 
 
 class Type1(Enum):
-    validation_error = 'validation_error'
-    not_supported = 'not_supported'
-    conversion_error = 'conversion_error'
-    internal_error = 'internal_error'
+    validation_error = "validation_error"
+    not_supported = "not_supported"
+    conversion_error = "conversion_error"
+    internal_error = "internal_error"
 
 
 class ErrorDetail(BaseModel):
-    code: str = Field(..., description='Error code')
-    message: str = Field(..., description='Error message')
-    type: Type1 | None = Field(None, description='Error type')
+    code: str = Field(..., description="Error code")
+    message: str = Field(..., description="Error message")
+    type: Type1 | None = Field(None, description="Error type")
     details: dict[str, Any] | None = Field(
-        None, description='Detailed error information'
+        None, description="Detailed error information"
     )
 
 
 class ErrorResponse(BaseModel):
     error: ErrorDetail
-    request_id: str | None = Field(None, description='Request ID')
-    timestamp: float | None = Field(None, description='Error occurrence timestamp')
+    request_id: str | None = Field(None, description="Request ID")
+    timestamp: float | None = Field(None, description="Error occurrence timestamp")
 
 
 class Provider(Enum):
-    openai = 'openai'
-    anthropic = 'anthropic'
-    gemini = 'gemini'
-    azure_openai = 'azure_openai'
-    aws_bedrock = 'aws_bedrock'
-    google_vertex_ai = 'google_vertex_ai'
-    cohere = 'cohere'
-    huggingface = 'huggingface'
-    vllm = 'vllm'
-    nvidia_nim = 'nvidia_nim'
-    together_ai = 'together_ai'
-    fireworks_ai = 'fireworks_ai'
-    mistral = 'mistral'
-    groq = 'groq'
+    openai = "openai"
+    anthropic = "anthropic"
+    gemini = "gemini"
+    azure_openai = "azure_openai"
+    aws_bedrock = "aws_bedrock"
+    google_vertex_ai = "google_vertex_ai"
+    cohere = "cohere"
+    huggingface = "huggingface"
+    vllm = "vllm"
+    nvidia_nim = "nvidia_nim"
+    together_ai = "together_ai"
+    fireworks_ai = "fireworks_ai"
+    mistral = "mistral"
+    groq = "groq"
 
 
 class Message(BaseModel):
-    role: Role = Field(..., description='Message sender role')
-    content: str | list[ContentBlock] = Field(..., description='Message content')
-    metadata: dict[str, Any] | None = Field(None, description='Additional metadata')
-    tool_calls: list[ToolCall] | None = Field(None, description='Tool calls list')
-    identifier: str | None = Field(None, description='Message unique identifier')
+    role: Role = Field(..., description="Message sender role")
+    content: str | list[ContentBlock] = Field(..., description="Message content")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    tool_calls: list[ToolCall] | None = Field(None, description="Tool calls list")
+    identifier: str | None = Field(None, description="Message unique identifier")
     cache_control: dict[str, Any] | None = Field(
-        None, description='Cache control metadata for message-level caching (Anthropic)'
+        None, description="Cache control metadata for message-level caching (Anthropic)"
     )
 
 
 class CoreRequest(BaseModel):
-    model: str = Field(..., description='Model identifier')
-    messages: list[Message] = Field(..., description='Conversation messages list')
+    model: str = Field(..., description="Model identifier")
+    messages: list[Message] = Field(..., description="Conversation messages list")
     tools: list[ToolDefinition] | None = Field(
-        None, description='Available tool definitions list'
+        None, description="Available tool definitions list"
     )
     tool_choice: ToolChoice | dict[str, Any] | None = Field(
-        None, description='Tool selection strategy'
+        None, description="Tool selection strategy"
     )
     parallel_tool_calls: bool | None = Field(
-        None, description='Allow parallel execution of multiple tools'
+        None, description="Allow parallel execution of multiple tools"
     )
     system_instruction: str | None = Field(
-        None, description='System-level instruction (separate from messages list)'
+        None, description="System-level instruction (separate from messages list)"
     )
     generation_params: GenerationParameters | None = None
-    metadata: dict[str, Any] | None = Field(None, description='Request metadata')
+    metadata: dict[str, Any] | None = Field(None, description="Request metadata")

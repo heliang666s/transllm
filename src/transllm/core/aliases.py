@@ -3,7 +3,6 @@
 # This enables bidirectional conversion between any two providers
 
 
-
 class ProviderAliases:
     """Field alias mappings for each LLM provider"""
 
@@ -52,21 +51,16 @@ class ProviderAliases:
         "tool_choice": "tool_choice",
         "system": "system_instruction",
         "metadata": "metadata",
-
         # Message fields
         "role": "role",
         "content": "content",
-
         # Response fields
         "id": "id",
         "type": "object",
-        "role": "role",
-        "content": "content",
         "usage": "usage",
         "input_tokens": "usage.input_tokens",
         "output_tokens": "usage.output_tokens",
         "stop_reason": "finish_reason",
-
         # Tool fields
         "name": "name",
         "description": "description",
@@ -88,12 +82,10 @@ class ProviderAliases:
         "toolConfig": "tool_choice",
         "systemInstruction": "system_instruction",
         "safetySettings": "metadata",
-
         # Content fields
         "parts": "content",
         "role": "role",
         "text": "text",
-
         # Response fields
         "candidates": "choices",
         "promptFeedback": "metadata",
@@ -101,7 +93,6 @@ class ProviderAliases:
         "promptTokenCount": "usage.prompt_tokens",
         "candidatesTokenCount": "usage.completion_tokens",
         "totalTokenCount": "usage.total_tokens",
-
         # Message roles (different enum values)
         "user": "user",
         "model": "assistant",
@@ -150,11 +141,9 @@ class ProviderAliases:
         "tools": "tools",
         "toolConfiguration": "tool_choice",
         "system": "system_instruction",
-
         # Content fields
         "role": "role",
         "content": "content",
-
         # Response fields
         "response": "choices",
         "usage": "usage",
@@ -178,11 +167,9 @@ class ProviderAliases:
         "tools": "tools",
         "toolConfig": "tool_choice",
         "systemInstruction": "system_instruction",
-
         # Content fields
         "parts": "content",
         "role": "role",
-
         # Response fields
         "candidates": "choices",
         "usageMetadata": "usage",
@@ -204,7 +191,6 @@ class ProviderAliases:
         "stop_sequences": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "text": "content",
         "generation_id": "id",
@@ -240,7 +226,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -261,7 +246,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -282,7 +266,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -303,7 +286,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -324,7 +306,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -345,7 +326,6 @@ class ProviderAliases:
         "stop": "generation_params.stop_sequences",
         "tools": "tools",
         "tool_choice": "tool_choice",
-
         # Response fields
         "id": "id",
         "object": "object",
@@ -361,7 +341,9 @@ class ProviderAliases:
         aliases = getattr(cls, provider_key, None)
 
         if aliases is None:
-            raise ValueError(f"Unsupported provider: {provider}. Supported providers: {cls.list_supported_providers()}")
+            raise ValueError(
+                f"Unsupported provider: {provider}. Supported providers: {cls.list_supported_providers()}"
+            )
 
         return aliases
 

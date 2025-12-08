@@ -6,8 +6,9 @@ import base64
 import mimetypes
 import re
 import uuid
-from typing import Any, Dict, List, Optional, Union, Set
+from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urlparse
+
 
 def is_http_url(url: str) -> bool:
     """Check if URL is HTTP/HTTPS
@@ -45,7 +46,7 @@ def detect_media_type(url: str) -> Optional[str]:
     """
     if is_base64_data(url):
         # Extract from data URI
-        match = re.match(r'data:([^;]+)', url)
+        match = re.match(r"data:([^;]+)", url)
         if match:
             return match.group(1)
 
@@ -57,8 +58,7 @@ def detect_media_type(url: str) -> Optional[str]:
 
 
 def convert_image_url_to_gemini(
-    image_url: str,
-    detail: Optional[str] = None
+    image_url: str, detail: Optional[str] = None
 ) -> Dict[str, Any]:
     """Convert OpenAI image_url to Gemini format
 
@@ -75,16 +75,11 @@ def convert_image_url_to_gemini(
     """
     if is_base64_data(image_url):
         # Base64 data URI → inline_data
-        match = re.match(r'data:([^;]+);base64,(.+)', image_url)
+        match = re.match(r"data:([^;]+);base64,(.+)", image_url)
         if match:
             media_type = match.group(1)
             data = match.group(2)
-            return {
-                "inline_data": {
-                    "mime_type": media_type,
-                    "data": data
-                }
-            }
+            return {"inline_data": {"mime_type": media_type, "data": data}}
     elif is_http_url(image_url):
         # Google AI Studio doesn't support HTTP URLs directly
         # Automatically download and convert to base64 (like litellm does)
@@ -106,12 +101,7 @@ def convert_image_url_to_gemini(
             base64_data = base64.b64encode(response.content).decode("utf-8")
 
             # Return inline_data format (supported by Google AI Studio)
-            return {
-                "inline_data": {
-                    "mime_type": content_type,
-                    "data": base64_data
-                }
-            }
+            return {"inline_data": {"mime_type": content_type, "data": base64_data}}
         except Exception as e:
             raise ValueError(
                 f"Failed to fetch and convert HTTP URL to base64: {e}. "
@@ -159,9 +149,7 @@ def decode_thought_signature(signature: str) -> Optional[str]:
 
 
 def is_candidate_token_count_inclusive(
-    prompt_tokens: int,
-    candidates_tokens: int,
-    total_tokens: int
+    prompt_tokens: int, candidates_tokens: int, total_tokens: int
 ) -> bool:
     """Check if candidate tokens are included in total token count
 
@@ -269,15 +257,17 @@ def validate_gemini_request(request: Dict[str, Any]) -> None:
 
         # Check each part has required fields
         for part in parts:
-            if not any(key in part for key in ["text", "inline_data", "file_data", "function_call"]):
-                raise ValueError("Each part must have at least one of: text, inline_data, file_data, function_call")
+            if not any(
+                key in part
+                for key in ["text", "inline_data", "file_data", "function_call"]
+            ):
+                raise ValueError(
+                    "Each part must have at least one of: text, inline_data, file_data, function_call"
+                )
 
 
 def detect_circular_reference(
-    obj: Any,
-    visited: Optional[Set[int]] = None,
-    depth: int = 0,
-    max_depth: int = 50
+    obj: Any, visited: Optional[Set[int]] = None, depth: int = 0, max_depth: int = 50
 ) -> bool:
     """Detect circular references in nested objects
 
@@ -309,11 +299,15 @@ def detect_circular_reference(
         try:
             if isinstance(obj, dict):
                 for key, value in obj.items():
-                    if detect_circular_reference(value, visited.copy(), depth + 1, max_depth):
+                    if detect_circular_reference(
+                        value, visited.copy(), depth + 1, max_depth
+                    ):
                         return True
             elif isinstance(obj, list):
                 for item in obj:
-                    if detect_circular_reference(item, visited.copy(), depth + 1, max_depth):
+                    if detect_circular_reference(
+                        item, visited.copy(), depth + 1, max_depth
+                    ):
                         return True
         finally:
             visited.discard(obj_id)

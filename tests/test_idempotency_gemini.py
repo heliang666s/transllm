@@ -18,20 +18,11 @@ class TestGeminiBasicIdempotency:
         """Gemini chat request should survive roundtrip conversion"""
         gemini_req = {
             "model": "gemini-1.5-pro",
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": "Hello, how are you?"
-                        }
-                    ]
-                }
-            ],
+            "contents": [{"role": "user", "parts": [{"text": "Hello, how are you?"}]}],
             "generationConfig": {
                 "temperature": 0.7,
                 "maxOutputTokens": 100,
-            }
+            },
         }
 
         # Gemini → IR
@@ -64,7 +55,7 @@ class TestGeminiBasicIdempotency:
                                 "text": "Hello! I'm doing well, thank you. How can I help you today?"
                             }
                         ],
-                        "role": "model"
+                        "role": "model",
                     },
                     "finishReason": "stop",
                 }
@@ -73,14 +64,17 @@ class TestGeminiBasicIdempotency:
                 "promptTokenCount": 20,
                 "candidatesTokenCount": 12,
                 "totalTokenCount": 32,
-            }
+            },
         }
 
         # Gemini → IR
         unified = self.adapter.to_unified_response(gemini_resp)
 
         # Verify message content
-        assert unified.choices[0].message.content == "Hello! I'm doing well, thank you. How can I help you today?"
+        assert (
+            unified.choices[0].message.content
+            == "Hello! I'm doing well, thank you. How can I help you today?"
+        )
         assert unified.choices[0].finish_reason == FinishReason.stop
 
         # Verify usage
@@ -110,11 +104,7 @@ class TestGeminiToolsIdempotency:
             "contents": [
                 {
                     "role": "user",
-                    "parts": [
-                        {
-                            "text": "What's the weather like in Beijing?"
-                        }
-                    ]
+                    "parts": [{"text": "What's the weather like in Beijing?"}],
                 }
             ],
             "tools": [
@@ -128,20 +118,16 @@ class TestGeminiToolsIdempotency:
                                 "properties": {
                                     "location": {
                                         "type": "string",
-                                        "description": "City name"
+                                        "description": "City name",
                                     }
                                 },
-                                "required": ["location"]
-                            }
+                                "required": ["location"],
+                            },
                         }
                     ]
                 }
             ],
-            "toolConfig": {
-                "function_calling_config": {
-                    "mode": "ANY"
-                }
-            }
+            "toolConfig": {"function_calling_config": {"mode": "ANY"}},
         }
 
         # Gemini → IR
@@ -170,13 +156,11 @@ class TestGeminiToolsIdempotency:
                             {
                                 "function_call": {
                                     "name": "get_weather",
-                                    "args": {
-                                        "location": "Beijing"
-                                    }
+                                    "args": {"location": "Beijing"},
                                 }
                             }
                         ],
-                        "role": "model"
+                        "role": "model",
                     },
                     "finishReason": "tool_calls",
                 }
@@ -185,7 +169,7 @@ class TestGeminiToolsIdempotency:
                 "promptTokenCount": 25,
                 "candidatesTokenCount": 10,
                 "totalTokenCount": 35,
-            }
+            },
         }
 
         # Gemini → IR
@@ -220,21 +204,19 @@ class TestGeminiMultimodalIdempotency:
                 {
                     "role": "user",
                     "parts": [
-                        {
-                            "text": "What do you see in this image?"
-                        },
+                        {"text": "What do you see in this image?"},
                         {
                             "inline_data": {
                                 "mime_type": "image/jpeg",
-                                "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                                "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
                             }
-                        }
-                    ]
+                        },
+                    ],
                 }
             ],
             "generationConfig": {
                 "temperature": 0.5,
-            }
+            },
         }
 
         # Gemini → IR
@@ -254,7 +236,10 @@ class TestGeminiMultimodalIdempotency:
         assert "contents" in gemini_req2
         assert len(gemini_req2["contents"][0]["parts"]) == 2
         assert "inline_data" in gemini_req2["contents"][0]["parts"][1]
-        assert gemini_req2["contents"][0]["parts"][1]["inline_data"]["mime_type"] == "image/jpeg"
+        assert (
+            gemini_req2["contents"][0]["parts"][1]["inline_data"]["mime_type"]
+            == "image/jpeg"
+        )
 
 
 class TestGeminiSystemInstructionIdempotency:
@@ -267,23 +252,8 @@ class TestGeminiSystemInstructionIdempotency:
         """Gemini system instruction should survive roundtrip conversion"""
         gemini_req = {
             "model": "gemini-1.5-pro",
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": "Hello"
-                        }
-                    ]
-                }
-            ],
-            "system_instruction": {
-                "parts": [
-                    {
-                        "text": "You are a helpful assistant."
-                    }
-                ]
-            }
+            "contents": [{"role": "user", "parts": [{"text": "Hello"}]}],
+            "system_instruction": {"parts": [{"text": "You are a helpful assistant."}]},
         }
 
         # Gemini → IR
@@ -310,19 +280,12 @@ class TestGeminiJSONModeIdempotency:
         gemini_req = {
             "model": "gemini-1.5-pro",
             "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": "Extract the name and age"
-                        }
-                    ]
-                }
+                {"role": "user", "parts": [{"text": "Extract the name and age"}]}
             ],
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "maxOutputTokens": 100,
-            }
+            },
         }
 
         # Gemini → IR
@@ -351,20 +314,8 @@ class TestGeminiThinkingBlocksIdempotency:
         """Gemini thinking config should survive roundtrip conversion"""
         gemini_req = {
             "model": "gemini-2.0-flash-exp",
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": "What is 2+2?"
-                        }
-                    ]
-                }
-            ],
-            "thinkingConfig": {
-                "thinkingBudget": 8000,
-                "includeThoughts": True
-            }
+            "contents": [{"role": "user", "parts": [{"text": "What is 2+2?"}]}],
+            "thinkingConfig": {"thinkingBudget": 8000, "includeThoughts": True},
         }
 
         # Gemini → IR
@@ -383,14 +334,7 @@ class TestGeminiThinkingBlocksIdempotency:
         gemini_resp = {
             "candidates": [
                 {
-                    "content": {
-                        "parts": [
-                            {
-                                "text": "4"
-                            }
-                        ],
-                        "role": "model"
-                    },
+                    "content": {"parts": [{"text": "4"}], "role": "model"},
                     "finishReason": "stop",
                 }
             ],
@@ -398,8 +342,8 @@ class TestGeminiThinkingBlocksIdempotency:
                 "promptTokenCount": 10,
                 "candidatesTokenCount": 5,
                 "totalTokenCount": 15,
-                "thoughtsTokenCount": 20
-            }
+                "thoughtsTokenCount": 20,
+            },
         }
 
         # Gemini → IR
@@ -426,19 +370,8 @@ class TestGeminiStopSequencesIdempotency:
         """Gemini stop sequences should survive roundtrip conversion"""
         gemini_req = {
             "model": "gemini-1.5-pro",
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": "Count to 5"
-                        }
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "stopSequences": ["3"]
-            }
+            "contents": [{"role": "user", "parts": [{"text": "Count to 5"}]}],
+            "generationConfig": {"stopSequences": ["3"]},
         }
 
         # Gemini → IR
@@ -467,10 +400,7 @@ class TestGeminiEmptyResponseIdempotency:
         gemini_resp = {
             "candidates": [
                 {
-                    "content": {
-                        "parts": [],
-                        "role": "model"
-                    },
+                    "content": {"parts": [], "role": "model"},
                     "finishReason": "stop",
                 }
             ],
@@ -478,7 +408,7 @@ class TestGeminiEmptyResponseIdempotency:
                 "promptTokenCount": 5,
                 "candidatesTokenCount": 0,
                 "totalTokenCount": 5,
-            }
+            },
         }
 
         # Gemini → IR

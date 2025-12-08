@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set, Union
-from collections.abc import Mapping
-
-import json
+from typing import Any, Dict
 
 
 class GeminiSchemaConverter:
@@ -25,7 +22,9 @@ class GeminiSchemaConverter:
     def __init__(self) -> None:
         self._recursion_depth = 0
 
-    def convert(self, schema: Dict[str, Any], defs: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def convert(
+        self, schema: Dict[str, Any], defs: Dict[str, Any] | None = None
+    ) -> Dict[str, Any]:
         """Convert JSON Schema to Gemini Schema
 
         Args:
@@ -36,7 +35,9 @@ class GeminiSchemaConverter:
             Gemini Schema format dictionary
         """
         if self._recursion_depth > self.MAX_RECURSION_DEPTH:
-            raise ValueError(f"Max recursion depth ({self.MAX_RECURSION_DEPTH}) exceeded")
+            raise ValueError(
+                f"Max recursion depth ({self.MAX_RECURSION_DEPTH}) exceeded"
+            )
 
         self._recursion_depth += 1
 
@@ -66,7 +67,9 @@ class GeminiSchemaConverter:
         finally:
             self._recursion_depth -= 1
 
-    def _unpack_defs(self, schema: Dict[str, Any], defs: Dict[str, Any]) -> Dict[str, Any]:
+    def _unpack_defs(
+        self, schema: Dict[str, Any], defs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Recursively unpack $ref references from $defs"""
         if isinstance(schema, dict):
             # Handle $ref
@@ -91,7 +94,11 @@ class GeminiSchemaConverter:
         if isinstance(schema, dict):
             if "anyOf" in schema:
                 anyof = schema["anyOf"]
-                non_null_types = [item for item in anyof if not (isinstance(item, dict) and item.get("type") == "null")]
+                non_null_types = [
+                    item
+                    for item in anyof
+                    if not (isinstance(item, dict) and item.get("type") == "null")
+                ]
 
                 if len(non_null_types) == 1 and non_null_types[0].get("type") != "null":
                     # Single non-null type + null → nullable
@@ -150,8 +157,16 @@ class GeminiSchemaConverter:
 
         # Gemini Schema valid fields
         valid_fields = {
-            "type", "properties", "items", "required", "nullable",
-            "enum", "propertyOrdering", "description", "anyOf", "allOf"
+            "type",
+            "properties",
+            "items",
+            "required",
+            "nullable",
+            "enum",
+            "propertyOrdering",
+            "description",
+            "anyOf",
+            "allOf",
         }
 
         # Filter fields
@@ -183,7 +198,10 @@ class GeminiSchemaConverter:
 
             # Check anyOf with only null
             if "anyOf" in schema:
-                if len(schema["anyOf"]) == 1 and schema["anyOf"][0].get("type") == "null":
+                if (
+                    len(schema["anyOf"]) == 1
+                    and schema["anyOf"][0].get("type") == "null"
+                ):
                     raise ValueError("anyOf cannot contain only null type")
 
             # Recursively validate

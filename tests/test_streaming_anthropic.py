@@ -43,7 +43,9 @@ class TestAnthropicStreamingConversion:
         assert content_deltas[1].content_delta == " world"
 
         # Should have content_finish and stream_end events
-        content_finishes = [e for e in unified_events if e.type.value == "content_finish"]
+        content_finishes = [
+            e for e in unified_events if e.type.value == "content_finish"
+        ]
         assert len(content_finishes) >= 1
 
         stream_ends = [e for e in unified_events if e.type.value == "stream_end"]
@@ -123,8 +125,12 @@ class TestAnthropicStreamingConversion:
             unified_events.append(unified)
 
         # Should have multiple content blocks (thinking and text)
-        metadata_updates = [e for e in unified_events if e.type.value == "metadata_update"]
-        assert len(metadata_updates) >= 2  # At least content_block_start for thinking and text
+        metadata_updates = [
+            e for e in unified_events if e.type.value == "metadata_update"
+        ]
+        assert (
+            len(metadata_updates) >= 2
+        )  # At least content_block_start for thinking and text
 
     def test_stream_event_sequence_ids_auto_increment(self):
         """Test that sequence_id is automatically incremented"""
@@ -160,10 +166,6 @@ class TestAnthropicStreamingConversion:
         self.adapter.reset_stream_state()
         event = ANTHROPIC_STREAMING_EVENTS[2]
 
-        # Process some events
-        unified1 = self.adapter.to_unified_stream_event(event)
-        unified2 = self.adapter.to_unified_stream_event(event)
-
         # Reset and verify state is reset
         self.adapter.reset_stream_state()
         unified3 = self.adapter.to_unified_stream_event(event)
@@ -174,9 +176,7 @@ class TestAnthropicStreamingConversion:
         """Test that content_index is properly extracted and preserved"""
         self.adapter.reset_stream_state()
         # Event with index 0
-        unified_0 = self.adapter.to_unified_stream_event(
-            ANTHROPIC_STREAMING_EVENTS[2]
-        )
+        unified_0 = self.adapter.to_unified_stream_event(ANTHROPIC_STREAMING_EVENTS[2])
         assert unified_0.content_index == 0
 
         # Event with different index

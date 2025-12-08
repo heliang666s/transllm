@@ -65,4 +65,6 @@ class TestOpenAIStreamEventIdempotency:
             # Convert back to OpenAI format
             converted_event = adapter.from_unified_stream_event(unified_event)
 
-            assert converted_event["choices"] == event_data["choices"], f"Failed at index {i}: choices mismatch"
+            assert (
+                converted_event["choices"] == event_data["choices"]
+            ), f"Failed at index {i}: choices mismatch"

@@ -7,10 +7,6 @@ and multi-block content structures.
 
 import pytest
 from src.transllm.adapters.anthropic import AnthropicAdapter
-from tests.fixtures.anthropic import (
-    ANTHROPIC_THINKING_RESPONSE,
-    ANTHROPIC_CACHE_RESPONSE,
-)
 
 
 class TestAnthropicThinkingBlocksIdempotency:
@@ -50,7 +46,10 @@ class TestAnthropicThinkingBlocksIdempotency:
         # Verify thinking blocks in IR
         assert len(unified.choices[0].message.content) == 2
         content_blocks = unified.choices[0].message.content
-        assert content_blocks[0].type.value == "thinking" or content_blocks[0].type == "thinking"
+        assert (
+            content_blocks[0].type.value == "thinking"
+            or content_blocks[0].type == "thinking"
+        )
         assert "analyze this step by step" in content_blocks[0].thinking.content
 
         # IR → Anthropic
@@ -94,8 +93,8 @@ class TestAnthropicThinkingBlocksIdempotency:
         # Verify thinking and text blocks preserved in IR
         assert len(unified.choices[0].message.content) >= 2
         content_types = [str(b.type) for b in unified.choices[0].message.content]
-        assert any('thinking' in t for t in content_types)
-        assert any('text' in t for t in content_types)
+        assert any("thinking" in t for t in content_types)
+        assert any("text" in t for t in content_types)
 
         # Verify tool_use extracted as tool_call
         assert unified.choices[0].message.tool_calls is not None
@@ -206,9 +205,7 @@ class TestAnthropicCacheControlIdempotency:
                     "description": "Search the internet",
                     "input_schema": {
                         "type": "object",
-                        "properties": {
-                            "query": {"type": "string"}
-                        },
+                        "properties": {"query": {"type": "string"}},
                     },
                     "cache_control": {"type": "ephemeral"},
                 }
@@ -363,7 +360,7 @@ class TestAnthropicUsageTokensIdempotency:
 
         # Roundtrip
         unified = self.adapter.to_unified_response(anthropic_resp)
-        
+
         # Verify total calculation
         # Total should be: input + output + cache_creation
         expected_total = 100 + 50 + 2000

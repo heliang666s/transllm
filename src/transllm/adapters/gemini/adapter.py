@@ -33,9 +33,7 @@ class GeminiAdapter(BaseAdapter):
     """
 
     def __init__(
-        self,
-        provider_name: Provider = Provider.gemini,
-        model: str | None = None
+        self, provider_name: Provider = Provider.gemini, model: str | None = None
     ) -> None:
         """Initialize Gemini adapter
 
@@ -76,10 +74,9 @@ class GeminiAdapter(BaseAdapter):
             # Add system message if present
             if system_instruction:
                 messages.append(
-                    self.to_unified_message({
-                        "role": "system",
-                        "content": system_instruction
-                    })
+                    self.to_unified_message(
+                        {"role": "system", "content": system_instruction}
+                    )
                 )
 
             # Convert contents to messages
@@ -93,33 +90,34 @@ class GeminiAdapter(BaseAdapter):
 
                 for part in parts:
                     if "text" in part:
-                        content_parts.append({
-                            "type": "text",
-                            "text": part["text"]
-                        })
+                        content_parts.append({"type": "text", "text": part["text"]})
                     elif "inline_data" in part:
-                        content_parts.append({
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{part['inline_data']['mime_type']};base64,{part['inline_data']['data']}"
+                        content_parts.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{part['inline_data']['mime_type']};base64,{part['inline_data']['data']}"
+                                },
                             }
-                        })
+                        )
                     elif "file_data" in part:
-                        content_parts.append({
-                            "type": "image_url",
-                            "image_url": {
-                                "url": part["file_data"]["file_uri"]
+                        content_parts.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": part["file_data"]["file_uri"]},
                             }
-                        })
+                        )
                     elif "function_call" in part:
-                        tool_calls.append({
-                            "id": part["function_call"].get("id", ""),
-                            "type": "function",
-                            "function": {
-                                "name": part["function_call"]["name"],
-                                "arguments": part["function_call"].get("args", {})
+                        tool_calls.append(
+                            {
+                                "id": part["function_call"].get("id", ""),
+                                "type": "function",
+                                "function": {
+                                    "name": part["function_call"]["name"],
+                                    "arguments": part["function_call"].get("args", {}),
+                                },
                             }
-                        })
+                        )
 
                 # Build content
                 if content_parts and len(content_parts) == 1:
@@ -127,11 +125,13 @@ class GeminiAdapter(BaseAdapter):
                 else:
                     content_str = content_parts
 
-                message = self.to_unified_message({
-                    "role": role,
-                    "content": content_str,
-                    "tool_calls": tool_calls if tool_calls else None
-                })
+                message = self.to_unified_message(
+                    {
+                        "role": role,
+                        "content": content_str,
+                        "tool_calls": tool_calls if tool_calls else None,
+                    }
+                )
 
                 messages.append(message)
 
@@ -144,7 +144,7 @@ class GeminiAdapter(BaseAdapter):
                             ToolDefinition(
                                 name=func_decl["name"],
                                 description=func_decl.get("description", ""),
-                                parameters=func_decl.get("parameters", {})
+                                parameters=func_decl.get("parameters", {}),
                             )
                         )
 
@@ -245,20 +245,16 @@ class GeminiAdapter(BaseAdapter):
                     # Convert ToolDefinition to Gemini function declarations
                     func_decl = {
                         "name": tool.name,
-                        "description": tool.description or ""
+                        "description": tool.description or "",
                     }
                     if tool.parameters:
                         func_decl["parameters"] = tool.parameters
-                    tools.append({
-                        "function_declarations": [func_decl]
-                    })
+                    tools.append({"function_declarations": [func_decl]})
                 if tools:
                     gemini_request["tools"] = tools
                     # Add toolConfig for function calling
                     gemini_request["toolConfig"] = {
-                        "function_calling_config": {
-                            "mode": "ANY"
-                        }
+                        "function_calling_config": {"mode": "ANY"}
                     }
 
             # Add system instruction if present
@@ -273,12 +269,15 @@ class GeminiAdapter(BaseAdapter):
 
             # Add thinking config if present (Gemini 2.x/3.x)
             if unified_request.generation_params:
-                thinking_blocks = getattr(unified_request.generation_params, 'thinking_blocks', None)
+                thinking_blocks = getattr(
+                    unified_request.generation_params, "thinking_blocks", None
+                )
                 if thinking_blocks:
                     gemini_request["thinkingConfig"] = thinking_blocks[0]
 
             # Validate the final request
             from .utils import validate_gemini_request
+
             validate_gemini_request(gemini_request)
 
             return gemini_request
@@ -313,7 +312,9 @@ class GeminiAdapter(BaseAdapter):
                     created=data.get("createTime"),
                     model=data.get("model"),
                     choices=[],
-                    usage=UsageStatistics(prompt_tokens=0, completion_tokens=0, total_tokens=0),
+                    usage=UsageStatistics(
+                        prompt_tokens=0, completion_tokens=0, total_tokens=0
+                    ),
                 )
 
             # Take first candidate
@@ -325,7 +326,12 @@ class GeminiAdapter(BaseAdapter):
             message = self._extract_message_from_parts(parts)
 
             # Build choice
-            from src.transllm.core.schema import Choice, ResponseMessage as IRResponseMessage, FinishReason
+            from src.transllm.core.schema import (
+                Choice,
+                ResponseMessage as IRResponseMessage,
+                FinishReason,
+            )
+
             response_message = IRResponseMessage(
                 role=message["role"],
                 content=message["content"],
@@ -389,7 +395,9 @@ class GeminiAdapter(BaseAdapter):
                 f"Failed to convert Gemini response to unified format: {e}"
             ) from e
 
-    def _extract_message_from_parts(self, parts: list[dict[str, Any]]) -> dict[str, Any]:
+    def _extract_message_from_parts(
+        self, parts: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Extract message from Gemini parts
 
         Args:
@@ -409,10 +417,11 @@ class GeminiAdapter(BaseAdapter):
                 func_call = part["function_call"]
                 # Convert to ToolCall object
                 from src.transllm.core.schema import ToolCall
+
                 tool_call = ToolCall(
                     identifier=None,  # Gemini doesn't provide IDs
                     name=func_call["name"],
-                    arguments=func_call.get("args", {})
+                    arguments=func_call.get("args", {}),
                 )
                 tool_calls.append(tool_call)
 
@@ -425,10 +434,7 @@ class GeminiAdapter(BaseAdapter):
             content = ""
 
         # Build message
-        message = {
-            "role": "assistant",
-            "content": content
-        }
+        message = {"role": "assistant", "content": content}
 
         if tool_calls:
             message["tool_calls"] = tool_calls
@@ -477,39 +483,50 @@ class GeminiAdapter(BaseAdapter):
                             url = content_part.get("image_url", {}).get("url", "")
                             if url.startswith("data:"):
                                 # Extract mime type and data
-                                match = url.match(r'data:([^;]+);base64,(.+)') if hasattr(url, 'match') else None
+                                match = (
+                                    url.match(r"data:([^;]+);base64,(.+)")
+                                    if hasattr(url, "match")
+                                    else None
+                                )
                                 if match:
-                                    parts.append({
-                                        "inline_data": {
-                                            "mime_type": match.group(1),
-                                            "data": match.group(2)
+                                    parts.append(
+                                        {
+                                            "inline_data": {
+                                                "mime_type": match.group(1),
+                                                "data": match.group(2),
+                                            }
                                         }
-                                    })
+                                    )
                         elif part_type == "tool_result":
                             # Handle tool results
-                            parts.append({
-                                "function_response": {
-                                    "name": content_part.get("tool_name", "unknown"),
-                                    "response": content_part.get("content", "")
+                            parts.append(
+                                {
+                                    "function_response": {
+                                        "name": content_part.get(
+                                            "tool_name", "unknown"
+                                        ),
+                                        "response": content_part.get("content", ""),
+                                    }
                                 }
-                            })
+                            )
 
                 # Handle tool calls
                 if message.tool_calls:
                     for tool_call in message.tool_calls:
-                        parts.append({
-                            "function_call": {
-                                "name": tool_call.name,
-                                "args": tool_call.arguments
+                        parts.append(
+                            {
+                                "function_call": {
+                                    "name": tool_call.name,
+                                    "args": tool_call.arguments,
+                                }
                             }
-                        })
+                        )
 
                 candidate = {
-                    "content": {
-                        "parts": parts,
-                        "role": message.role
-                    },
-                    "finishReason": choice.finish_reason.value if choice.finish_reason else "stop",
+                    "content": {"parts": parts, "role": message.role},
+                    "finishReason": choice.finish_reason.value
+                    if choice.finish_reason
+                    else "stop",
                 }
 
                 candidates.append(candidate)
@@ -525,7 +542,9 @@ class GeminiAdapter(BaseAdapter):
                     "totalTokenCount": usage.total_tokens,
                 }
                 if usage.reasoning_tokens:
-                    gemini_response["usageMetadata"]["thoughtsTokenCount"] = usage.reasoning_tokens
+                    gemini_response["usageMetadata"]["thoughtsTokenCount"] = (
+                        usage.reasoning_tokens
+                    )
 
             return gemini_response
 
@@ -535,8 +554,7 @@ class GeminiAdapter(BaseAdapter):
             ) from e
 
     def transform_stream(
-        self,
-        stream: Generator[dict[str, Any], None, None]
+        self, stream: Generator[dict[str, Any], None, None]
     ) -> Generator[StreamEvent, None, None]:
         """Transform Gemini streaming response to unified IR
 
@@ -591,7 +609,9 @@ class GeminiAdapter(BaseAdapter):
             Gemini message dictionary with 'role' and 'parts'
         """
         # Convert role enum to string
-        role_str = message.role.value if hasattr(message.role, 'value') else str(message.role)
+        role_str = (
+            message.role.value if hasattr(message.role, "value") else str(message.role)
+        )
 
         result = {
             "role": role_str,
@@ -604,76 +624,70 @@ class GeminiAdapter(BaseAdapter):
         if message.content:
             if isinstance(message.content, str):
                 # Simple text content
-                parts.append({
-                    "text": message.content
-                })
+                parts.append({"text": message.content})
             elif isinstance(message.content, list):
                 # Multimodal content
                 for content_part in message.content:
-                    if hasattr(content_part, 'type'):
+                    if hasattr(content_part, "type"):
                         # ContentBlock object
                         part_type = content_part.type
                         if part_type.value == "text":
-                            parts.append({
-                                "text": content_part.text
-                            })
+                            parts.append({"text": content_part.text})
                         elif part_type.value == "image_url":
                             # Convert image_url to Gemini format
                             image_url = content_part.image_url.url
                             if image_url.startswith("data:"):
                                 # Base64 data URI
                                 import re
-                                match = re.match(r'data:([^;]+);base64,(.+)', image_url)
+
+                                match = re.match(r"data:([^;]+);base64,(.+)", image_url)
                                 if match:
-                                    parts.append({
-                                        "inline_data": {
-                                            "mime_type": match.group(1),
-                                            "data": match.group(2)
+                                    parts.append(
+                                        {
+                                            "inline_data": {
+                                                "mime_type": match.group(1),
+                                                "data": match.group(2),
+                                            }
                                         }
-                                    })
+                                    )
                             else:
                                 # Assume it's a file URI
-                                parts.append({
-                                    "file_data": {
-                                        "file_uri": image_url
-                                    }
-                                })
+                                parts.append({"file_data": {"file_uri": image_url}})
                     else:
                         # Dict-like content part
                         part_type = content_part.get("type")
                         if part_type == "text":
-                            parts.append({
-                                "text": content_part.get("text", "")
-                            })
+                            parts.append({"text": content_part.get("text", "")})
                         elif part_type == "image_url":
                             image_url = content_part.get("image_url", {}).get("url", "")
                             if image_url.startswith("data:"):
                                 import re
-                                match = re.match(r'data:([^;]+);base64,(.+)', image_url)
+
+                                match = re.match(r"data:([^;]+);base64,(.+)", image_url)
                                 if match:
-                                    parts.append({
-                                        "inline_data": {
-                                            "mime_type": match.group(1),
-                                            "data": match.group(2)
+                                    parts.append(
+                                        {
+                                            "inline_data": {
+                                                "mime_type": match.group(1),
+                                                "data": match.group(2),
+                                            }
                                         }
-                                    })
+                                    )
                             else:
-                                parts.append({
-                                    "file_data": {
-                                        "file_uri": image_url
-                                    }
-                                })
+                                parts.append({"file_data": {"file_uri": image_url}})
 
         # Handle tool calls
         if message.tool_calls:
             for call in message.tool_calls:
-                parts.append({
-                    "function_call": {
-                        "id": call.identifier or "",
-                        "name": call.name,
-                        "arguments": call.arguments
+                parts.append(
+                    {
+                        "function_call": {
+                            "id": call.identifier or "",
+                            "name": call.name,
+                            "arguments": call.arguments,
+                        }
                     }
-                })
+                )
 
         # Add parts to result
         if parts:
