@@ -1,5 +1,6 @@
-"""Anthropic adapter for format conversion"""
+"""Anthropic adapter and helpers for format conversion"""
 
 from .adapter import AnthropicAdapter
+from .client import AnthropicMessagesClient
 
-__all__ = ["AnthropicAdapter"]
+__all__ = ["AnthropicAdapter", "AnthropicMessagesClient"]

@@ -221,6 +221,10 @@ class OpenAIAdapter(BaseAdapter):
 
         if unified_request.metadata:
             result["metadata"] = unified_request.metadata
+            result["store"] = True
+
+        if "store" in result and isinstance(result["store"], str):
+            result["store"] = result["store"].lower() == "true"
 
         return result
 
