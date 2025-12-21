@@ -343,10 +343,16 @@ class OpenAIAdapter(BaseAdapter):
         message_data = choice_data.get("message", {})
         message = self._convert_response_message(message_data)
 
+        # Map OpenAI finish_reason values to unified IR enum values
+        finish_reason = choice_data.get("finish_reason")
+        if finish_reason == "end_turn":
+            # OpenAI's 'end_turn' indicates natural conversation end
+            finish_reason = "stop"
+
         return Choice(
             message=message,
             index=choice_data.get("index", 0),
-            finish_reason=choice_data.get("finish_reason"),
+            finish_reason=finish_reason,
             logprobs=choice_data.get("logprobs"),
         )
 
@@ -668,6 +674,11 @@ class OpenAIAdapter(BaseAdapter):
 
         content_delta = delta.get("content", "")
         finish_reason = choice.get("finish_reason")
+
+        # Map OpenAI finish_reason values to unified IR enum values
+        if finish_reason == "end_turn":
+            # OpenAI's 'end_turn' indicates natural conversation end
+            finish_reason = "stop"
 
         # Dynamically determine event type based on content and finish reason
         event_type = "content_delta"  # Default type

@@ -36,6 +36,7 @@ from ...core.schema import (
 )
 
 
+
 class AnthropicAdapter(BaseAdapter):
     """Adapter for Anthropic Claude API format
 
@@ -1067,3 +1068,22 @@ class AnthropicAdapter(BaseAdapter):
                         return True
 
         return False
+
+def _augment_message_start(message: dict[str, Any], model_name: str | None) -> dict[str, Any]:
+    """Fill Anthropic message_start payload with common defaults."""
+    message = dict(message)
+
+    if model_name and "model" not in message:
+        message["model"] = model_name
+
+    message.setdefault("stop_reason", None)
+    message.setdefault("stop_sequence", None)
+
+    usage = message.get("usage") or {}
+    if not isinstance(usage, dict):
+        usage = {}
+    usage.setdefault("input_tokens", 0)
+    usage.setdefault("output_tokens", 0)
+    message["usage"] = usage
+    return message
+
