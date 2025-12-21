@@ -1,0 +1,5 @@
+# Upstream defaults for the TransLLM streaming proxy.
+# Replace values as needed; request/query parameters still override these defaults.
+url: "https://api.jiekou.ai/openai/chat/completions"
+apikey: "sk_JuUIaRn5gscIuy01pVxz9BBV51CjprJZTkL5PX2HWzE"
+source: "openai"
