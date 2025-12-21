@@ -194,6 +194,19 @@ def _detect_provider(request_body: dict[str, Any]) -> Provider | None:
     )
 
 
+def _load_default_config() -> dict[str, Any]:
+    """Load default configuration from config.yaml - cached on first load."""
+    if not CONFIG_PATH.exists():
+        return {}
+    if yaml is None:
+        raise RuntimeError("PyYAML is required to read config.yaml")
+    with CONFIG_PATH.open("r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError("config.yaml must contain a mapping")
+    return loaded
+
+
 def _build_config(
     body_config: dict[str, Any] | None,
     url_param: str | None,
@@ -201,17 +214,6 @@ def _build_config(
     source_param: str | None,
 ) -> UpstreamConfig:
     merged: dict[str, Any] = {}
-
-    def _load_default_config() -> dict[str, Any]:
-        if not CONFIG_PATH.exists():
-            return {}
-        if yaml is None:
-            raise RuntimeError("PyYAML is required to read config.yaml")
-        with CONFIG_PATH.open("r", encoding="utf-8") as f:
-            loaded = yaml.safe_load(f) or {}
-        if not isinstance(loaded, dict):
-            raise ValueError("config.yaml must contain a mapping")
-        return loaded
 
     try:
         merged.update(_load_default_config())
@@ -300,6 +302,13 @@ async def messages(
             for k, v in raw_body.items()
             if k not in {"config", "provider", "stream"}
         }
+
+    config = _build_config(
+        envelope.config.model_dump(by_alias=True) if envelope.config else None,
+        url,
+        apikey,
+        source,
+    )
 
     client_provider = _normalize_provider(provider) or _normalize_provider(
         envelope.provider
